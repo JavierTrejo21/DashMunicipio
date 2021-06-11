@@ -1,5 +1,5 @@
-# areas/recepcion_presidenta.py
 import pandas as pd
+import unicodedata
 import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import html, dcc
@@ -11,33 +11,47 @@ VERDE_OSCURO = "#0f4c3a"
 TEXTO_DARK = "#1f2937"
 TEXTO_SECUNDARIO = "#6b7280"
 
+def limpiar_texto(texto):
+    if not isinstance(texto, str):
+        return str(texto)
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).upper().strip()
+
 def analizar_recepcion_presidenta(df):
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de Recepción / Rendición de Cuentas no contiene registros válidos.", color="warning", className="m-3")
 
     df_rec = df.copy()
-    df_rec.columns = [str(c).strip().upper() for c in df_rec.columns]
     
-    # Identificación flexible de columnas
-    col_rubro = next((c for c in df_rec.columns if "RUBRO" in c or "CATEGORIA" in c or "TEMA" in c or "ASUNTO" in c), df_rec.columns[0])
+    # Normalizar nombres de columnas (eliminar acentos y espacios)
+    df_rec.columns = [limpiar_texto(c) for c in df_rec.columns]
+    
+    # Identificación flexible y segura de columnas clave
+    col_rubro = next((c for c in df_rec.columns if "RUBRO" in c or "CATEGORIA" in c or "TEMA" in c or "ASUNTO" in c), df_rec.columns[2])
     col_inversion = next((c for c in df_rec.columns if "INVERSION" in c or "MONTO" in c or "COSTO" in c or "GASTO" in c), None)
     col_beneficiarios = next((c for c in df_rec.columns if "BENEFICIARIO" in c or "CIV" in c or "PERSONAS" in c), None)
     col_mes = next((c for c in df_rec.columns if "MES" in c or "FECHA" in c), None)
 
-    # Limpieza numérica de montos y beneficiarios
+    # Limpieza numérica robusta para la inversión y beneficiarios
     if col_inversion:
-        df_rec[col_inversion] = pd.to_numeric(df_rec[col_inversion].astype(str).str.replace(r"[^\d.]", "", regex=True), errors='coerce').fillna(0)
+        df_rec[col_inversion] = pd.to_numeric(
+            df_rec[col_inversion].astype(str).str.replace(r"[^\d.]", "", regex=True), 
+            errors='coerce'
+        ).fillna(0)
     else:
-        df_rec["__INVERSION__"] = 1000.0
+        df_rec["__INVERSION__"] = 0.0
         col_inversion = "__INVERSION__"
 
     if col_beneficiarios:
-        df_rec[col_beneficiarios] = pd.to_numeric(df_rec[col_beneficiarios].astype(str).str.replace(r"[^\d.]", "", regex=True), errors='coerce').fillna(0)
+        df_rec[col_beneficiarios] = pd.to_numeric(
+            df_rec[col_beneficiarios].astype(str).str.replace(r"[^\d.]", "", regex=True), 
+            errors='coerce'
+        ).fillna(0)
     else:
-        df_rec["__BENEFICIARIOS__"] = 100
+        df_rec["__BENEFICIARIOS__"] = 0
         col_beneficiarios = "__BENEFICIARIOS__"
 
-    # Métricas Globales para las 3 tarjetas superiores
+    # Métricas Globales reales y exactas
     inversion_total = df_rec[col_inversion].sum()
     beneficiarios_totales = df_rec[col_beneficiarios].sum()
     gestiones_atendidas = len(df_rec)
@@ -71,7 +85,7 @@ def analizar_recepcion_presidenta(df):
         ),
     ], className="mb-3")
 
-    # Agrupación por Rubros (Ordenados de mayor a menor inversión)
+    # Agrupación precisa por Rubros (Ordenados de mayor a menor inversión)
     df_rubros = df_rec.groupby(col_rubro, as_index=False).agg({
         col_inversion: 'sum',
         col_beneficiarios: 'sum'
@@ -80,7 +94,7 @@ def analizar_recepcion_presidenta(df):
     total_inv_val = df_rubros[col_inversion].sum() if inversion_total > 0 else 1
     df_rubros['PORCENTAJE'] = (df_rubros[col_inversion] / total_inv_val) * 100
 
-    # 1. Gráfico de Barras Vertical (idéntico a tu primera captura)
+    # 1. Gráfico de Barras Vertical
     fig_barras = px.bar(
         df_rubros,
         x=col_rubro,
@@ -99,7 +113,7 @@ def analizar_recepcion_presidenta(df):
         yaxis=dict(showgrid=True, gridcolor="#f3f4f6", title="")
     )
 
-    # 2. Gráfico de Línea Histórico por Mes (idéntico a tu primera captura)
+    # 2. Gráfico de Línea Histórico por Mes
     if col_mes and not df_rec[col_mes].isna().all():
         df_meses = df_rec.groupby(col_mes, as_index=False)[col_inversion].sum()
     else:
@@ -128,7 +142,7 @@ def analizar_recepcion_presidenta(df):
         yaxis=dict(showgrid=True, gridcolor="#f3f4f6", title="")
     )
 
-    # 3. Tarjetas inferiores de desglose por Rubro (idéntico a tu segunda captura)
+    # 3. Tarjetas inferiores de desglose por Rubro
     tarjetas_rubros_cols = []
     for _, row in df_rubros.iterrows():
         nombre_rubro = str(row[col_rubro])

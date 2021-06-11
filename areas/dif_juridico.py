@@ -45,7 +45,7 @@ def analizar_dif_juridico(df):
         
         dbc.Col(dbc.Card([
             dbc.CardBody([
-                html.H6("CASOS CANALIZADOS", className="text-muted mb-1", style={"fontSize": "0.7rem", "fontWeight": "700"}),
+                html.H6("CASOS CANALIZADOS A OTRAS INSTANCIAS PARA SU ATENCIÓN", className="text-muted mb-1", style={"fontSize": "0.7rem", "fontWeight": "700"}),
                 html.H4(f"{int(total_canalizaciones):,} casos", style={"color": GUINDA_MATRIZ, "fontWeight": "bold", "fontSize": "1.2rem"})
             ])
         ], className="border-0 shadow-sm mb-3", style={"borderRadius": "8px", "borderLeft": f"5px solid {GUINDA_MATRIZ}"}), width=12, md=4),

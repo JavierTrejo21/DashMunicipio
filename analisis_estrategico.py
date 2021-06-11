@@ -24,6 +24,7 @@ from areas.licencias_reglamentos import analizar_licencias_reglamentos
 from areas.mujeres import analizar_instancia_mujeres
 from areas.obras_publicas import analizar_obras_publicas
 from areas.orientacion_alimentaria import analizar_orientacion_alimentaria
+from areas.desayunos_escolares import analizar_desayunos_escolares
 from areas.proteccion_civil import analizar_proteccion_civil
 from areas.pueblos_indigenas import analizar_pueblos_indigenas
 from areas.recepcion_presidenta import analizar_recepcion_presidenta
@@ -144,6 +145,14 @@ MAPEO_ANALISIS = {
     "4_1_ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
     "ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
     "ecologia": analizar_ecologia,
+    # --- ÁREA: 2.1.4 DIF DESAYUNOS ESCOLARES ---
+    "2_1_4_DIF_DESAYUNOS_ESCOLARES": analizar_desayunos_escolares,
+    "2.1.4 DIF DESAYUNOS ESCOLARES": analizar_desayunos_escolares,
+    "2.1.4 DIF DESAYUNOS ESCOLARES.xlsx": analizar_desayunos_escolares,
+    "2.1.4 DIF DESAYUNOS ESCOLARES.xlsx - Hoja1": analizar_desayunos_escolares,
+    "2.1.4 DIF DESAYUNOS ESCOLARES.xlsx - Hoja1.csv": analizar_desayunos_escolares,
+    "DIF_DESAYUNOS_ESCOLARES": analizar_desayunos_escolares,
+    "desayunos_escolares": analizar_desayunos_escolares,
     # --- ÁREA: 2.1.2 DIF APOYOS ECONÓMICOS ---
     "2_1_2_DIF_APOYOS_ECONOMICOS": analizar_apoyos_economicos,
     "2.1.2 DIF APOYOS ECONOMICOS": analizar_apoyos_economicos,

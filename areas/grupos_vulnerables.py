@@ -1,15 +1,21 @@
 # areas/grupos_vulnerables.py
 import pandas as pd
-import plotly.express as px
 import dash_bootstrap_components as dbc
-from dash import html, dcc
+from dash import html
+
+# Colorimetría exacta basada en la Matriz Institucional
+VERDE_MATRIZ = "#115e59"      # Verde petróleo principal (Cabeceras de tabla / KPIs)
+GUINDA_MATRIZ = "#691c32"     # Guinda institucional (Sub-encabezados / Líneas de acento)
+TEXTO_DARK = "#1f2937"
+GRIS_CLARO = "#f9fafb"
+
+# Universo total de comunidades en el municipio
+TOTAL_COMUNIDADES_MUNICIPIO = 73
 
 def analizar_grupos_vulnerables(df):
     """
-    Módulo Operativo Simplificado para Grupos Vulnerables.
-    - Centrado exclusivamente en la cantidad de beneficiarios (Sin datos financieros).
-    - Remueve de forma automática las comunidades con valores en cero.
-    - Dos gráficas limpias y balanceadas de personas atendidas.
+    Módulo Operativo para Grupos Vulnerables adaptado exactamente con la estructura 
+    institucional de tarjetas superiores, consolidado por comunidad y detalles del programa.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El DataFrame de Grupos Vulnerables llegó vacío.", color="warning", className="m-3")
@@ -19,112 +25,94 @@ def analizar_grupos_vulnerables(df):
         df_vuel = df.copy()
         df_vuel.columns = [str(c).strip().upper() for c in df_vuel.columns]
 
-        col_comunidad = next((c for c in df_vuel.columns if "COMUNIDAD" in c), None)
-        col_beneficiarios = next((c for c in df_vuel.columns if "BENEFICIARIO" in c or "CANTIDAD" in c), None)
-        col_programa = next((c for c in df_vuel.columns if "PROGRAMA" in c), None)
+        col_comunidad = next((c for c in df_vuel.columns if "COMUNIDAD" in c), "Comunidad")
+        col_beneficiarios = next((c for c in df_vuel.columns if "BENEFICIARIO" in c or "CANTIDAD" in c), "Cantidad")
 
-        if col_beneficiarios: 
-            df_vuel[col_beneficiarios] = pd.to_numeric(df_vuel[col_beneficiarios], errors='coerce').fillna(0)
-            col_cantidad_sistema = col_beneficiarios
-        else:
-            df_vuel["BENEFICIARIOS_GENERICO"] = 0
-            col_cantidad_sistema = "BENEFICIARIOS_GENERICO"
+        df_vuel[col_comunidad] = df_vuel[col_comunidad].astype(str).str.strip().str.title()
+        df_vuel[col_beneficiarios] = pd.to_numeric(df_vuel[col_beneficiarios], errors='coerce').fillna(0)
 
-        if col_programa: df_vuel[col_programa] = df_vuel[col_programa].astype(str).str.strip()
+        total_beneficiarios = df_vuel[col_beneficiarios].sum()
+        
+        # Análisis de comunidades atendidas frente al universo real municipal (73)
+        df_efectivo = df_vuel[df_vuel[col_beneficiarios] > 0].copy()
+        comunidades_atendidas = df_efectivo[col_comunidad].nunique()
+        
+        # Cálculo real del Índice de Cobertura Municipal
+        indice_cobertura_municipal = (comunidades_atendidas / TOTAL_COMUNIDADES_MUNICIPIO * 100) if TOTAL_COMUNIDADES_MUNICIPIO > 0 else 0
 
-        # 🔥 CLAVE DE LA SIMPLICIDAD: Quedarse únicamente con registros que sí tienen beneficiarios
-        df_activos = df_vuel[df_vuel[col_cantidad_sistema] > 0].copy()
-
-        # =================================================================
-        # 2. MÉTRICAS SUPERIORES DE CONTROL (KPIs)
-        # =================================================================
-        total_beneficiarios = df_activos[col_cantidad_sistema].sum()
-        total_comunidades = df_activos[col_comunidad].nunique()
-
-        estilo_tarjeta = {
-            "borderRadius": "6px",
-            "boxShadow": "0 1px 3px rgba(0,0,0,0.04)",
-            "border": "1px solid #eef2f5",
-            "backgroundColor": "#ffffff",
-            "padding": "12px 14px",
-            "textAlign": "center",
-            "height": "100%"
-        }
-
-        seccion_kpis = dbc.Row([
-            dbc.Col(html.Div([
-                html.Div("👥 TOTAL CIUDADANOS ATENDIDOS", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                html.H4(f"{total_beneficiarios:,.0f} personas", style={"margin": "2px 0 0 0", "fontWeight": "800", "color": "#73243D", "fontSize": "20px"})
-            ], style=estilo_tarjeta), width=12, sm=6),
+        # --- TARJETAS DE RESUMEN SUPERIORES (Estructura institucional exacta) ---
+        kpis_row = dbc.Row([
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("TOTAL DE CIUDADANOS ATENDIDOS", className="text-muted mb-1", style={"fontSize": "0.68rem", "fontWeight": "700", "letterSpacing": "0.5px"}),
+                    html.H4(f"{int(total_beneficiarios):,} PERSONAS", style={"color": VERDE_MATRIZ, "fontWeight": "bold", "fontSize": "1.3rem", "marginBottom": "4px"}),
+                    html.P("Acumulado histórico del periodo", className="text-muted mb-0", style={"fontSize": "0.72rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3", style={"borderRadius": "8px", "borderLeft": f"5px solid {VERDE_MATRIZ}"}), width=12, md=4),
             
-            dbc.Col(html.Div([
-                html.Div("📍 LOCALIDADES CON COBERTURA ACTIVA", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                html.H4(f"{total_comunidades} Comunidades", style={"margin": "2px 0 0 0", "fontWeight": "800", "color": "#2b6cb0", "fontSize": "20px"})
-            ], style=estilo_tarjeta), width=12, sm=6),
-        ], className="g-2 mb-3")
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("LOCALIDADES ATENDIDAS", className="text-muted mb-1", style={"fontSize": "0.68rem", "fontWeight": "700", "letterSpacing": "0.5px"}),
+                    html.H4(f"{comunidades_atendidas} DE {TOTAL_COMUNIDADES_MUNICIPIO}", style={"color": GUINDA_MATRIZ, "fontWeight": "bold", "fontSize": "1.3rem", "marginBottom": "4px"}),
+                    html.P("Comunidades con cobertura activa", className="text-muted mb-0", style={"fontSize": "0.72rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3", style={"borderRadius": "8px", "borderLeft": f"5px solid {GUINDA_MATRIZ}"}), width=12, md=4),
 
-        # =================================================================
-        # 3. GRÁFICA 1: PERSONAS ATENDIDAS POR LOCALIDAD (Izquierda)
-        # =================================================================
-        df_geo = df_activos.groupby(col_comunidad)[col_cantidad_sistema].sum().reset_index()
-        df_geo = df_geo.sort_values(by=col_cantidad_sistema, ascending=True)
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("ÍNDICE DE COBERTURA MUNICIPAL", className="text-muted mb-1", style={"fontSize": "0.68rem", "fontWeight": "700", "letterSpacing": "0.5px"}),
+                    html.H4(f"{indice_cobertura_municipal:.1f}%", style={"color": TEXTO_DARK, "fontWeight": "bold", "fontSize": "1.3rem", "marginBottom": "4px"}),
+                    html.P(f"Sobre un total de {TOTAL_COMUNIDADES_MUNICIPIO} localidades", className="text-muted mb-0", style={"fontSize": "0.72rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3", style={"borderRadius": "8px", "borderLeft": f"5px solid {VERDE_MATRIZ}"}), width=12, md=4),
+        ], className="mb-3")
 
-        fig_comunidades = px.bar(
-            df_geo, x=col_cantidad_sistema, y=col_comunidad, orientation='h',
-            color_discrete_sequence=["#2b6cb0"],
-            labels={col_cantidad_sistema: "Beneficiarios", col_comunidad: ""}
-        )
-        fig_comunidades.update_layout(
-            margin=dict(l=10, r=10, t=10, b=10),
-            plot_bgcolor="white",
-            height=280,
-            xaxis={'gridcolor': '#f0f0f0'}
-        )
-        fig_comunidades.update_yaxes(automargin=True)
+        # Resumen consolidado por comunidad
+        df_resumen_comunidad = df_efectivo.groupby(col_comunidad)[col_beneficiarios].sum().reset_index()
+        df_resumen_comunidad = df_resumen_comunidad.sort_values(by=col_beneficiarios, ascending=False)
 
-        # =================================================================
-        # 4. GRÁFICA 2: PERSONAS ATENDIDAS POR TIPO DE PROGRAMA (Derecha)
-        # =================================================================
-        df_prog = df_activos.groupby(col_programa)[col_cantidad_sistema].sum().reset_index()
+        filas_tabla = []
+        for _, row in df_resumen_comunidad.iterrows():
+            filas_tabla.append(html.Tr([
+                html.Td(row[col_comunidad], style={"fontSize": "0.8rem", "fontWeight": "500", "paddingLeft": "15px"}),
+                html.Td(f"{int(row[col_beneficiarios]):,} personas", style={"fontSize": "0.8rem", "fontWeight": "bold", "color": VERDE_MATRIZ, "paddingRight": "15px"})
+            ]))
 
-        fig_programas = px.bar(
-            df_prog, x=col_programa, y=col_cantidad_sistema,
-            color_discrete_sequence=["#319795"],
-            labels={col_cantidad_sistema: "Ciudadanos Atendidos", col_programa: ""}
-        )
-        fig_programas.update_layout(
-            margin=dict(l=10, r=10, t=15, b=10),
-            plot_bgcolor="white",
-            height=280,
-            yaxis={'gridcolor': '#f0f0f0'}
-        )
-        fig_programas.update_xaxes(automargin=True)
+        # Tabla con estilo de cabecera en bloque Guinda institucional
+        tabla_consolidada = html.Div([
+            html.Div([
+                html.Span("CONSOLIDADO DE ATENCIÓN POR COMUNIDAD (ACUMULADO PERIODO)", style={"fontSize": "0.85rem", "fontWeight": "bold", "color": "white", "letterSpacing": "0.5px"})
+            ], className="p-3", style={"backgroundColor": GUINDA_MATRIZ, "borderTopLeftRadius": "8px", "borderTopRightRadius": "8px"}),
+            html.Div([
+                dbc.Table([
+                    html.Thead(html.Tr([html.Th("COMUNIDAD / LOCALIDAD", style={"paddingLeft": "15px"}), html.Th("TOTAL ACUMULADO", style={"paddingRight": "15px"})]), style={"backgroundColor": GRIS_CLARO, "fontSize": "0.75rem", "color": "#4b5563"}),
+                    html.Tbody(filas_tabla if filas_tabla else [html.Tr([html.Td("Sin registros", colSpan=2, className="text-center text-muted")])])
+                ], bordered=True, hover=True, responsive=True, size="sm", className="mb-0")
+            ], style={"maxHeight": "380px", "overflowY": "auto", "padding": "5px"})
+        ], className="bg-white border shadow-sm", style={"borderRadius": "8px"})
 
-        # =================================================================
-        # 5. DISPOSICIÓN DUAL EN PANTALLA
-        # =================================================================
-        bloque_dashboard = dbc.Row([
-            # Izquierda: Comunidades sin ceros
-            dbc.Col(html.Div([
-                html.Div("📍 DISTRIBUCIÓN DE POBLACIÓN ATENDIDA POR COMUNIDAD", 
-                         style={"padding": "10px 14px", "fontWeight": "700", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "fontSize": "11px", "color": "#4a5568"}),
-                html.Div(dcc.Graph(figure=fig_comunidades, config={'displayModeBar': False}), style={"padding": "5px"})
-            ], className="bg-white border shadow-sm", style={"borderRadius": "6px", "height": "100%"}), width=12, lg=6),
-
-            # Derecha: Programas
-            dbc.Col(html.Div([
-                html.Div("🎯 POBLACIÓN BENEFICIADA POR TIPO DE PROGRAMA", 
-                         style={"padding": "10px 14px", "fontWeight": "700", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "fontSize": "11px", "color": "#4a5568"}),
-                html.Div(dcc.Graph(figure=fig_programas, config={'displayModeBar': False}), style={"padding": "5px"})
-            ], className="bg-white border shadow-sm", style={"borderRadius": "6px", "height": "100%"}), width=12, lg=6),
-        ], className="g-3")
+        # Tarjeta de Contexto Operativo con barra superior Verde Petróleo
+        card_info = html.Div([
+            html.Div([
+                html.Span("DETALLES DEL PROGRAMA", style={"fontSize": "0.85rem", "fontWeight": "bold", "color": "white", "letterSpacing": "0.5px"})
+            ], className="p-3", style={"backgroundColor": VERDE_MATRIZ, "borderTopLeftRadius": "8px", "borderTopRightRadius": "8px"}),
+            html.Div([
+                html.P("El Programa de Atención a Grupos Vulnerables opera mediante acciones continuas y entrega de apoyos orientados a beneficiarios específicos en el municipio.", style={"fontSize": "0.8rem", "color": TEXTO_DARK, "lineHeight": "1.5"}),
+                html.Ul([
+                    html.Li(f"Universo total municipal: {TOTAL_COMUNIDADES_MUNICIPIO} localidades registradas.", style={"fontSize": "0.78rem", "color": "#4b5563"}),
+                    html.Li(f"Localidades atendidas efectivamente: {comunidades_atendidas}.", style={"fontSize": "0.78rem", "color": "#4b5563"}),
+                    html.Li(f"Localidades pendientes de cobertura: {TOTAL_COMUNIDADES_MUNICIPIO - comunidades_atendidas}.", style={"fontSize": "0.78rem", "color": "#4b5563"})
+                ], className="mb-0 ps-3")
+            ], style={"padding": "15px"})
+        ], className="bg-white border shadow-sm h-100", style={"borderRadius": "8px"})
 
         return html.Div([
-            html.Div("EVALUACIÓN DE IMPACTO SOCIAL - ATENCIÓN A GRUPOS VULNERABLES", 
-                     style={"fontSize": "11px", "fontWeight": "700", "color": "#73243D", "marginBottom": "14px", "letterSpacing": "0.8px"}),
-            seccion_kpis,
-            bloque_dashboard
-        ], style={"padding": "5px"})
+            kpis_row,
+            dbc.Row([
+                dbc.Col(tabla_consolidada, md=7, className="mb-3"),
+                dbc.Col(card_info, md=5, className="mb-3")
+            ])
+        ])
 
     except Exception as e:
-        return dbc.Alert(f"❌ Error al estructurar el módulo simplificado: {str(e)}", color="danger", className="m-3")
+        return dbc.Alert(f"❌ Error al estructurar el módulo de Grupos Vulnerables: {str(e)}", color="danger", className="m-3")

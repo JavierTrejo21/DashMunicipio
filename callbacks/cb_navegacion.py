@@ -42,12 +42,12 @@ def register_navegacion_callbacks(app):
         if df.empty:
             ejes_defecto = [
                 (1, "GOBIERNO PARTICIPATIVO Y TRANSFORMADOR"),
-                (2, "DESARROLLO ECONÓMICO Y CULTURAL"),
-                (3, "BIENESTAR Y PROSPERIDAD"),
+                (2, "BIENESTAR Y PROSPERIDAD"),
+                (3, "DESARROLLO ECONÓMICO Y CULTURAL"),
                 (4, "DESARROLLO SOSTENIBLE E INFRAESTRUCTURA"),
                 (5, "IGUALDAD Y DERECHOS HUMANOS"),
-                (6, "TRANSPARENCIA Y RENDICIÓN DE CUENTAS"),
-                (7, "INNOVACIÓN Y GOBIERNA DIGITAL"),
+                (6, "GOBIERNO TECNOLÓGICO Y DIGITAL"),
+                (7, "TRANSPARENCIA Y RENDICIÓN DE CUENTAS"),
             ]
             cursor = conn.cursor()
             cursor.execute(
@@ -62,7 +62,6 @@ def register_navegacion_callbacks(app):
 
         conn.close()
 
-        paleta_colores = ["#781d37", "#1ca2a9", "#781d37", "#1ca2a9", "#781d37", "#1ca2a9", "#781d37"]
         iconos_disponibles = [
             "bi bi-diagram-3-fill",
             "bi bi-rocket-takeoff-fill",
@@ -76,32 +75,73 @@ def register_navegacion_callbacks(app):
         config_elementos = {}
         for idx, row in df.iterrows():
             id_acuerdo = int(row["id"])
-            color_asignado = paleta_colores[(id_acuerdo - 1) % len(paleta_colores)]
             icono_asignado = iconos_disponibles[(id_acuerdo - 1) % len(iconos_disponibles)]
             config_elementos[id_acuerdo] = {
-                "color": color_asignado,
-                "sub": "Seguimiento estratégico y evaluación de indicadores del Plan Municipal.",
+                "sub": "Seguimiento estratégico y evaluación de indicadores...",
                 "icon": icono_asignado,
                 "titulo": row["nombre"]
             }
 
-        def crear_tarjeta_radial(id_acuerdo, conf, porcentaje_base):
-            color_actual = conf["color"]
+        def crear_tarjeta_estilo(id_acuerdo, conf, porcentaje_base, posicion="centro"):
+            if posicion == "izq":
+                borde_estilo = {
+                    "borderLeft": "6px solid #781d37",
+                    "borderTop": "1px solid rgba(255, 255, 255, 1)",
+                    "borderRight": "1px solid rgba(255, 255, 255, 1)",
+                    "borderBottom": "1px solid rgba(255, 255, 255, 1)",
+                }
+            elif posicion == "der":
+                borde_estilo = {
+                    "borderRight": "6px solid #781d37",
+                    "borderTop": "1px solid rgba(255, 255, 255, 1)",
+                    "borderLeft": "1px solid rgba(255, 255, 255, 1)",
+                    "borderBottom": "1px solid rgba(255, 255, 255, 1)",
+                }
+            else:
+                borde_estilo = {
+                    "borderRight": "6px solid #781d37",
+                    "borderLeft": "6px solid #781d37",
+                    "borderTop": "1px solid rgba(255, 255, 255, 1)",
+                    "borderBottom": "1px solid rgba(255, 255, 255, 1)",
+                }
+
+            estilos_base = {
+                "borderRadius": "14px", 
+                "backgroundColor": "rgba(255, 255, 255, 0.9)",
+                "boxShadow": "0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
+                "cursor": "pointer", 
+                "width": "100%", 
+                "maxWidth": "440px", 
+                "height": "95px", 
+                "margin": "0 auto",
+                "padding": "10px"
+            }
+            estilos_base.update(borde_estilo)
+
             return html.Div(
                 [
                     dbc.Row([
                         dbc.Col([
                             html.Div([
-                                html.I(className=conf["icon"], style={"fontSize": "1.1rem", "color": color_actual})
-                            ], style={"width": "42px", "height": "42px", "borderRadius": "50%", "backgroundColor": f"{color_actual}22", "border": f"1.5px solid {color_actual}", "display": "flex", "alignItems": "center", "justifyContent": "center", "margin": "auto"})
+                                html.I(className=conf["icon"], style={"fontSize": "1.1rem", "color": "#781d37"})
+                            ], style={
+                                "width": "42px", "height": "42px", "borderRadius": "50%", 
+                                "backgroundColor": "#ffffff", 
+                                "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.06)",
+                                "display": "flex", "alignItems": "center", "justifyContent": "center", "margin": "auto"
+                            })
                         ], className="col-2 d-flex align-items-center justify-content-center"),
                         dbc.Col([
-                            html.H6(conf["titulo"], className="mb-1 fw-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                            html.H6(conf["titulo"], className="mb-1 fw-bold text-dark", style={"fontSize": "0.75rem", "lineHeight": "1.2", "letterSpacing": "0.3px"}),
                             html.P(conf["sub"], className="text-muted mb-2 text-truncate", style={"fontSize": "0.62rem"}),
                             html.Div([
-                                html.Div(style={"width": f"{porcentaje_base}%", "height": "4px", "backgroundColor": color_actual, "borderRadius": "4px"})
-                            ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "4px", "overflow": "hidden", "marginBottom": "4px"}),
-                            html.Small(f"{porcentaje_base}%", className="fw-bold text-dark", style={"fontSize": "0.65rem"})
+                                html.Div(style={
+                                    "width": f"{porcentaje_base}%", "height": "5px", 
+                                    "background": "linear-gradient(90deg, #1ca2a9 0%, #00b4d8 100%)", 
+                                    "borderRadius": "4px",
+                                    "boxShadow": "0 2px 4px rgba(28, 162, 169, 0.3)"
+                                })
+                            ], style={"width": "100%", "backgroundColor": "#e2e8f0", "borderRadius": "4px", "overflow": "hidden"})
                         ], className="col-10")
                     ], className="g-0 align-items-center"),
                     dbc.Button(
@@ -110,14 +150,14 @@ def register_navegacion_callbacks(app):
                         style={"position": "absolute", "top": "0", "left": "0", "width": "100%", "height": "100%", "opacity": "0", "cursor": "pointer", "zIndex": "20"},
                     ),
                 ],
-                className="p-3 bg-white border shadow-sm position-relative mb-3",
-                style={"borderRadius": "12px", "borderColor": "#e5e7eb", "cursor": "pointer", "width": "100%", "maxWidth": "460px", "height": "95px", "margin": "0 auto"},
+                className="bg-white position-relative mb-2",
+                style=estilos_base,
             )
 
         lista_ids = list(config_elementos.keys())
         
         id_superior = lista_ids[0]
-        tarjeta_superior = crear_tarjeta_radial(id_superior, config_elementos[id_superior], 75)
+        tarjeta_superior = crear_tarjeta_estilo(id_superior, config_elementos[id_superior], 75, posicion="centro")
 
         ids_restantes = lista_ids[1:]
         mitad = math.ceil(len(ids_restantes) / 2)
@@ -125,76 +165,91 @@ def register_navegacion_callbacks(app):
         ids_der = ids_restantes[mitad:]
 
         tarjetas_izq = [
-            crear_tarjeta_radial(i, config_elementos[i], 70 + (i * 3) % 20) for i in ids_izq
+            crear_tarjeta_estilo(i, config_elementos[i], 70 + (i * 3) % 20, posicion="der") for i in ids_izq
         ]
         
         tarjetas_der = [
-            crear_tarjeta_radial(i, config_elementos[i], 65 + (i * 4) % 25) for i in ids_der
+            crear_tarjeta_estilo(i, config_elementos[i], 65 + (i * 4) % 25, posicion="izq") for i in ids_der
         ]
 
-        elementos_circulos = []
+        elementos_espaciadores = []
         for idx, row in df.iterrows():
-            id_acuerdo = int(row["id"])
-            conf = config_elementos[id_acuerdo]
-            elementos_circulos.append(
-                html.Div([
-                    dbc.Button(
-                        html.I(className=conf["icon"] + " text-white", style={"fontSize": "0.9rem"}),
-                        id={"type": "btn-acuerdo", "index": id_acuerdo},
-                        color="link",
-                        style={"width": "34px", "height": "34px", "padding": "0", "textDecoration": "none"}
-                    )
-                ], style={"width": "34px", "height": "34px", "borderRadius": "50%", "backgroundColor": conf["color"], "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 1px 3px rgba(0,0,0,0.1)", "cursor": "pointer", "marginBottom": "58px", "position": "relative", "zIndex": "25"})
+            elementos_espaciadores.append(
+                html.Div(style={
+                    "width": "34px", "height": "34px", 
+                    "marginBottom": "20px"
+                })
             )
 
-        circulos_centrales = html.Div(
-            elementos_circulos,
+        espacio_vacio_central = html.Div(
+            elementos_espaciadores,
             className="d-flex flex-column align-items-center justify-content-center",
             style={"paddingTop": "0px"}
         )
 
-        # Panel central con un ancho proporcional y estético acorde a las tarjetas laterales
         panel_areas_central = html.Div(
             id="contenedor-areas-dinamico",
             children=[
                 html.Div([
                     html.Div([
-                        html.I(className="bi bi-folder2-open text-muted me-2", style={"fontSize": "0.9rem"}),
-                        html.H6("ÁREAS ADMINISTRATIVAS", className="text-muted fw-bold m-0", style={"fontSize": "0.75rem", "letterSpacing": "0.4px"})
-                    ], className="d-flex align-items-center mb-3 pb-2 border-bottom"),
+                        html.I(className="bi bi-folder-fill text-white me-2", style={"fontSize": "1rem"}),
+                        html.H6("ÁREAS ADMINISTRATIVAS", className="text-white fw-bold m-0", style={"fontSize": "0.8rem", "letterSpacing": "0.5px"})
+                    ], className="d-flex align-items-center p-3", style={
+                        "backgroundColor": "#1ca2a9",
+                        "borderTopLeftRadius": "14px",
+                        "borderTopRightRadius": "14px",
+                        "boxShadow": "0 4px 6px rgba(0,0,0,0.1)"
+                    }),
                     html.Div(
                         id="contenedor-botones-areas", 
                         children=[
-                            html.Small("Selecciona un acuerdo.", className="text-muted fst-italic", style={"fontSize": "0.75rem"})
+                            html.Small("Selecciona un acuerdo.", className="text-muted fst-italic p-3", style={"fontSize": "0.75rem"})
                         ], 
-                        className="d-flex flex-column gap-2"
+                        className="d-flex flex-column gap-1 p-3 position-relative",
+                        style={
+                            "borderBottomLeftRadius": "14px",
+                            "borderBottomRightRadius": "14px",
+                            "background": "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)"
+                        }
                     )
-                ], className="bg-white p-3 border shadow-sm mx-auto", style={"borderRadius": "12px", "borderColor": "#e5e7eb", "width": "100%", "maxWidth": "460px"})
+                ], className="bg-white mx-auto", style={
+                    "borderRadius": "14px", 
+                    "boxShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    "width": "100%", 
+                    "maxWidth": "440px",
+                    "border": "1px solid rgba(255,255,255,0.8)"
+                })
             ],
-            style={"display": "none", "width": "150%"}
+            style={"display": "none", "width": "100%"}
         )
 
         layout_distribucion = html.Div([
             dbc.Row([
                 dbc.Col(tarjeta_superior, xs=12, md=8, className="mx-auto")
-            ], className="mb-3"),
+            ], className="mb-2"),
             
-            # Distribución simétrica en 3 columnas equilibradas (md=4 cada una)
             dbc.Row([
                 dbc.Col(
                     html.Div(tarjetas_izq, className="d-flex flex-column align-items-center w-100"), 
                     xs=12, md=4
                 ),
                 dbc.Col([
-                    html.Div(circulos_centrales, id="wrapper-circulos"),
+                    html.Div(espacio_vacio_central, id="wrapper-circulos"),
                     panel_areas_central
-                ], xs=12, md=4, className="d-flex flex-column align-items-center justify-content-start pt-1"),
+                ], xs=12, md=4, className="d-flex flex-column align-items-center justify-content-start pt-0"),
                 dbc.Col(
                     html.Div(tarjetas_der, className="d-flex flex-column align-items-center w-100"), 
                     xs=12, md=4
                 )
             ], className="align-items-start")
-        ])
+        ], style={
+            "backgroundColor": "#e8ecf2", 
+            "backgroundImage": "radial-gradient(#cbd5e1 0.75px, transparent 0.75px)",
+            "backgroundSize": "16px 16px",
+            "minHeight": "auto", 
+            "padding": "10px 20px 15px 20px", 
+            "borderRadius": "16px"
+        })
 
         return html.Div([layout_distribucion])
 
@@ -263,29 +318,37 @@ def register_navegacion_callbacks(app):
                             html.Span(
                                 num_tag,
                                 style={
-                                    "backgroundColor": "#781d37",
+                                    "backgroundColor": "#1ca2a9",
                                     "color": "#FFFFFF",
                                     "padding": "2px 6px",
-                                    "borderRadius": "6px",
-                                    "fontSize": "0.68rem",
+                                    "borderRadius": "50%",
+                                    "fontSize": "0.65rem",
                                     "fontWeight": "700",
                                     "marginRight": "8px",
-                                    "minWidth": "26px",
-                                    "textAlign": "center"
+                                    "minWidth": "22px",
+                                    "height": "22px",
+                                    "display": "inline-flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center",
+                                    "boxShadow": "0 2px 4px rgba(28, 162, 169, 0.2)",
+                                    "flexShrink": "0"
                                 },
                             ),
                             html.Span(
                                 texto_tag.upper(),
                                 style={
-                                    "fontSize": "0.72rem",
+                                    "fontSize": "0.68rem",
                                     "fontWeight": "600",
                                     "color": "#1e293b",
                                     "letterSpacing": "0.2px",
-                                    "lineHeight": "1.1"
+                                    "lineHeight": "1.1",
+                                    "whiteSpace": "normal",
+                                    "wordBreak": "break-word"
                                 },
                             ),
                         ],
-                        className="d-flex align-items-center text-truncate"
+                        className="d-flex align-items-center position-relative w-100",
+                        style={"zIndex": "2"}
                     )
                 ],
                 className="d-flex align-items-center justify-content-between w-100"
@@ -296,7 +359,7 @@ def register_navegacion_callbacks(app):
                     item_content,
                     id={"type": "btn-area", "index": a["id"]},
                     color="light",
-                    className="shadow-sm border mb-2 text-start w-100 py-2 px-2",
+                    className="shadow-sm border mb-1 text-start w-100 py-1 px-2 position-relative",
                     style={
                         "borderRadius": "8px",
                         "backgroundColor": "#f8fafc",
@@ -306,7 +369,29 @@ def register_navegacion_callbacks(app):
                 )
             )
 
-        return elementos_lista, {"display": "block", "width": "100%"}, {"display": "none"}
+        lista_con_linea = html.Div(
+            [
+                html.Div(style={
+                    "position": "absolute",
+                    "left": "22px",
+                    "top": "12px",
+                    "bottom": "12px",
+                    "width": "2px",
+                    "backgroundColor": "#1ca2a9",
+                    "zIndex": "1"
+                }),
+                html.Div(elementos_lista, className="d-flex flex-column gap-1 position-relative", style={"zIndex": "2"})
+            ],
+            className="position-relative py-1",
+            style={
+                "maxHeight": "320px", 
+                "overflowY": "auto", 
+                "overflowX": "hidden",
+                "paddingRight": "4px"
+            }
+        )
+
+        return lista_con_linea, {"display": "block", "width": "100%"}, {"display": "none"}
 
     @app.callback(
         [
