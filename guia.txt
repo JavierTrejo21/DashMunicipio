@@ -1,0 +1,407 @@
+http://127.0.0.1:8050/
+cd C:\DashMunicipio
+venv\Scripts\activate
+
+Bash
+cd C:\DashMunicipio
+python dashboard.py
+python reparar_db.py
+
+Oficios obras publicas avances de obras prioritarias recepcionadas en copladem de enero febrero
+uno para ecologia para expponer avances revisar en drive 2025
+Proyecto de interes avance de vivero
+
+python app_municipio.py
+
+------------------------------
+
+Recepcion.
+
+solicitudes preservacion de tradiciones
+apoyos economicos para preservacion de tradiciones y culura
+
+clasificaciion 
+social
+educacion
+salud
+etc
+desastres naturales
+deporte
+infraestructura (renta de maquinaria)
+cultura ganaderia medio ambiente
+----------
+
+Desarrollo rural:
+proyectos de gestion 
+(todos los restantes)
+impacto en monto
+
+Proyectos del ayuntamiento:
+pollitos
+tinacos
+gusano barrenador
+Rollos de alambre
+inversion  para capacitación
+(beneficiarios gnrl)
+
+---------------------
+
+Obras publicas
+Metas  no metros c2,3
+inversion en maquinaria con dayana
+comparacion de datos con el anio pasado inversion etc.
+escuela es nuestra
+faispriam
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+En resumen, la división de tareas de tu sistema es:
+database.py: Maneja los datos crudos y las tablas SQL.
+
+layouts.py: Construye el cascarón visual fijo y los modales de configuración del portal municipal.
+
+visualizaciones.py: Diseña las piezas internas móviles (las tablas editables, las tarjetas de KPI horizontales y los gráficos de barras/pastel de Hidalgo).
+
+app_municipio.py: Es el cerebro que conecta todo el sistema mediante los callbacks.
+
+
+
+
+venv\Scripts\activate
+streamlit run app.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mejor ayudame a mantener como estaba antes en el codigo de obras
+
+https://download2390.mediafire.com/f7jfr07m8kggvUhAzhgVm_7HdY0x7AVyFYq5ZgLfZIu_fKLw-O9dbJDcVzUkNDHB43SG9xLEqENjgf0Y09unNzFtIQCwL8d8FdAE2No6k3MgTVe8vBrKQ7q_S6C3_cJ2lGdzp_-Uakvck50ss7o4be-BvsBM6ez4ii5An7ZU-Y6zYg/v8d2l9kr3sdr5l3/MiniOS11+LTSC+v2025.01+x64+-+www.dprojects.org.rar
+1. Estructura estratégica del sistema (nivel gobierno)
+
+Tu página debería tener 4 niveles de información, no solo obras.
+
+Nivel 1 — Planeación estratégica
+
+Esto conecta Plan Municipal → Programas → Proyectos
+
+Mostrar:
+
+PLAN MUNICIPAL DE DESARROLLO
+
+Ejes estratégicos ejemplo:
+
+Desarrollo Social
+Infraestructura y Servicios Públicos
+Desarrollo Económico
+Gobierno Eficiente
+Seguridad Pública
+
+Cada eje debe mostrar:
+
+número de obras vinculadas
+inversión total
+beneficiarios
+avance promedio
+
+Visualización sugerida:
+
+gráfico tipo sunburst o treemap
+tarjetas por eje
+
+Ejemplo visual:
+
+Eje	Obras	Inversión	Avance
+Infraestructura	12	$22M	74%
+Desarrollo Social	8	$10M	68%
+2. Nivel PBR (programas presupuestarios)
+
+Aquí se muestra la estructura presupuestaria.
+
+Jerarquía PBR:
+
+Programa Presupuestario
+→ Componente
+→ Actividad
+→ Proyecto / Obra
+
+Ejemplo para Obras Públicas:
+
+Programa:
+Infraestructura Urbana
+
+Componentes:
+
+Pavimentación
+Agua potable
+Drenaje
+Alumbrado público
+
+Cada componente debe mostrar:
+
+presupuesto asignado
+presupuesto ejercido
+avance físico
+avance financiero
+
+Visualización sugerida:
+
+gráfico de avance físico vs financiero
+
+Ejemplo:
+
+Componente	Presupuesto	Ejercido	Avance
+Pavimentación	10M	6M	60%
+Agua potable	5M	3M	70%
+
+Esto es clave para auditorías.
+
+3. Nivel operativo (obras)
+
+Aquí sí entra lo que ya hiciste.
+
+Pero debes agregar más contexto.
+
+Cada obra debería tener:
+
+comunidad
+tipo de obra
+programa PBR
+eje PMD
+monto
+beneficiarios
+avance físico
+avance financiero
+estatus
+
+Visualización recomendada:
+
+mapa municipal
+
+para mostrar:
+
+ubicación de obras.
+
+También:
+
+gráfica de obras por estatus:
+
+concluidas
+en proceso
+en gestión
+4. Nivel impacto social
+
+Esto es algo que casi ningún ayuntamiento muestra, pero sería excelente.
+
+Indicadores de impacto:
+
+personas beneficiadas
+cobertura territorial
+inversión por habitante
+porcentaje de población beneficiada
+
+Ejemplo:
+
+Población municipio
+22,903 habitantes
+
+Beneficiarios obras
+10,291
+
+Cobertura
+
+44.9 %
+
+Esto se ve muy fuerte en informes de gobierno.
+
+5. Estructura visual de la página
+
+Te recomiendo esta arquitectura:
+
+1. Encabezado institucional
+
+Sistema Estratégico de Gestión Municipal
+Monitoreo PBR — Obras Públicas
+
+2. Tarjetas estratégicas
+
+4 o 5 indicadores:
+
+inversión total
+obras totales
+beneficiarios
+avance físico promedio
+avance financiero
+3. Avance por eje del Plan Municipal
+
+Gráfica:
+
+barras o treemap
+
+4. Avance PBR
+
+Gráfica:
+
+presupuesto vs ejercido
+
+5. Estatus de obras
+
+gráfica:
+
+barras o pastel
+
+6. Mapa de obras
+
+visualización territorial
+
+7. Tabla detallada
+
+lo que ya tienes.
+
+6. Estructura de base de datos ideal
+
+Tu tabla proyectos debería tener más campos estratégicos.
+
+Columnas recomendadas:
+
+id_proyecto
+nombre_proyecto
+ubicacion
+tipo_obra
+
+alineación estratégica
+
+eje_pmd
+programa_pbr
+componente_pbr
+
+recursos
+
+monto_total
+monto_ejercido
+
+impacto
+
+beneficiarios
+
+seguimiento
+
+avance_fisico
+avance_financiero
+estatus_obra
+
+geografía
+
+latitud
+longitud
+
+7. Indicadores que deberías mostrar
+
+Gobierno normalmente usa estos:
+
+eficiencia financiera
+
+ejercido / aprobado
+
+eficiencia física
+
+avance físico promedio
+
+cobertura
+
+beneficiarios / población
+
+inversión por habitante
+
+inversión total / población
+
+8. Mejoras visuales fuertes
+
+Si quieres que se vea muy profesional:
+
+agrega:
+
+semáforos de avance
+
+verde
+amarillo
+rojo
+
+según avance.
+
+timeline de obras
+
+inicio
+avance
+terminación
+
+ranking de comunidades beneficiadas
+9. Algo MUY importante
+
+Tu sistema puede crecer a:
+
+Sistema Integral de Seguimiento Municipal
+
+con módulos:
+
+obras públicas
+desarrollo social
+seguridad pública
+tesorería
+transparencia
+
+Tu estructura ya es buena base.
+
+10. Recomendación profesional
+
+Divide tu dashboard en 3 pestañas
+
+1 Planeación
+
+PMD + PBR
+
+2 Seguimiento
+
+avance de obras
+
+3 Impacto
+
+beneficiarios e inversión
