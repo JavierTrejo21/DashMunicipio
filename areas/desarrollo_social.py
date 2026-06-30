@@ -7,7 +7,8 @@ from dash import html, dcc, dash_table
 def analizar_desarrollo_social(df):
     """
     Módulo analítico premium para Dirección de Desarrollo Social.
-    Sintaxis corregida y cálculos blindados contra pérdidas de columnas tras groupby.
+    Optimizado para la estructura donde Columna D (VARIABLE) controla Ejecutado vs Pendiente.
+    Corrección de sintaxis en Plotly: titlefont corregido por title=dict(font=...).
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de Desarrollo Social no contiene registros válidos o está vacío.", color="warning")
@@ -17,7 +18,7 @@ def analizar_desarrollo_social(df):
     df_soc.columns = [str(c).strip().upper() for c in df_soc.columns]
     columnas_reales = df_soc.columns.tolist()
 
-    # Identificación tolerante de columnas originales
+    # Identificación tolerante de columnas según el estándar del proyecto
     col_mes = next((c for c in columnas_reales if "MES" in c), "MES")
     col_benef = next((c for c in columnas_reales if "BENEF" in c), "BENEFICIARIOS")
     col_act = next((c for c in columnas_reales if "ACT" in c), "ACTIVIDAD")
@@ -25,16 +26,16 @@ def analizar_desarrollo_social(df):
     col_con = next((c for c in columnas_reales if "CON" in c), "CONCEPTO")
     col_com = next((c for c in columnas_reales if "COMUNIDAD" in c), "COMUNIDAD")
 
-    # --- LIMPIEZA RIGUROSA Y VALORES POR DEFECTO ---
+    # --- LIMPIEZA RIGUROSA Y ESTANDARIZACIÓN TEXTUAL ---
     df_soc[col_benef] = pd.to_numeric(df_soc[col_benef], errors='coerce').fillna(0).astype(int)
-    df_soc[col_var] = df_soc[col_var].fillna("OTROS APOYOS").astype(str).str.strip().str.upper()
-    df_soc[col_con] = df_soc[col_con].fillna("EN PROCESO / REGISTRADO").astype(str).str.strip().str.upper()
+    df_soc[col_var] = df_soc[col_var].fillna("PENDIENTE DE APROBACIÓN").astype(str).str.strip().str.upper()
+    df_soc[col_act] = df_soc[col_act].fillna("OTROS APOYOS").astype(str).str.strip().str.upper()
     df_soc[col_com] = df_soc[col_com].fillna("SIN ESPECIFICAR").astype(str).str.strip().str.upper()
 
-    # --- CÁLCULO DE INDICADORES (KPIs) - MÉTODO SEGURO ---
+    # --- CÁLCULO DE INDICADORES (KPIs) ---
     total_beneficiarios = int(df_soc[col_benef].sum())
     
-    # Encontrar comunidad líder usando una columna temporal con nombre fijo ('TOTAL_APOYOS')
+    # Encontrar zona de mayor atención territorial
     df_top_com = df_soc.groupby(col_com)[col_benef].sum().reset_index(name='TOTAL_APOYOS')
     if not df_top_com.empty and df_top_com['TOTAL_APOYOS'].sum() > 0:
         idx_max = df_top_com['TOTAL_APOYOS'].idxmax()
@@ -44,8 +45,8 @@ def analizar_desarrollo_social(df):
     else:
         texto_comunidad = df_soc[col_com].value_counts().index[0] if not df_soc.empty else "Por definir"
 
-    # Conteo de expedientes pendientes
-    pendientes = int(df_soc[df_soc[col_con].str.contains("PENDIENTE", na=False)].shape[0])
+    # Conteo exacto de solicitudes pendientes en la columna D (VARIABLE)
+    pendientes = int(df_soc[df_soc[col_var].str.contains("PENDIENTE", na=False)].shape[0])
 
     # --- DISEÑO DE TARJETAS INSTITUCIONALES (KPIs) ---
     tarjetas_kpi = dbc.Row([
@@ -75,36 +76,41 @@ def analizar_desarrollo_social(df):
         ),
     ], className="mb-2")
 
-    # --- GRÁFICA 1: DONA DE PROGRAMAS (CON COLUMNA FIJA) ---
-    if total_beneficiarios > 0:
-        df_prog = df_soc.groupby(col_var)[col_benef].sum().reset_index(name='VALOR_SUMADO')
-    else:
-        df_prog = df_soc.groupby(col_var).size().reset_index(name='VALOR_SUMADO')
-
+    # --- GRÁFICA 1: DONA DE DISTRIBUCIÓN POR ACCIÓN OPERATIVA (ACTIVIDAD) ---
+    df_prog = df_soc.groupby(col_act).size().reset_index(name='CONTEO')
+    df_prog[col_act] = df_prog[col_act].str.wrap(25)
+    
     fig_programas = px.pie(
-        df_prog, values='VALOR_SUMADO', names=col_var, hole=0.5,
-        color_discrete_sequence=["#691c32", "#bc955c", "#1f2937"]
+        df_prog, values='CONTEO', names=col_act, hole=0.5,
+        color_discrete_sequence=["#691c32", "#bc955c", "#1f2937", "#4b5563", "#9ca3af"]
     )
     fig_programas.update_layout(
         margin=dict(l=10, r=10, t=10, b=10),
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02, font=dict(size=8.5)),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02, font=dict(size=8)),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
     )
 
-    # --- GRÁFICA 2: SEMÁFORO DE GESTIÓN ---
-    df_estatus = df_soc.groupby(col_con).size().reset_index(name='TOTAL')
+    # --- GRÁFICA 2: SEMÁFORO DE GESTIÓN (BARRAS BASADAS EN LA NUEVA COLUMNA VARIABLE) ---
+    df_estatus = df_soc.groupby(col_var).size().reset_index(name='TOTAL')
+    
+    color_map = {
+        "REALIZADO": "#10b981",              # Verde Éxito
+        "PENDIENTE DE APROBACIÓN": "#dc2626" # Rojo Alerta
+    }
+
     fig_estatus = px.bar(
-        df_estatus, x='TOTAL', y=col_con, orientation='h',
-        color=col_con,
-        color_discrete_map={
-            "ESTATUS PENDIENTE DE APROBACIÓN": "#dc2626",
-            "ENTREGADO / CONCRETADO": "#10b981",
-            "EN PROCESO / REGISTRADO": "#bc955c"
-        }
+        df_estatus, x='TOTAL', y=col_var, orientation='h',
+        color=col_var, color_discrete_map=color_map
     )
+    
+    # --- AQUÍ CORREGIMOS LA SINTAXIS DEL TÍTULO DEL EJE X ---
     fig_estatus.update_layout(
         margin=dict(l=10, r=10, t=15, b=15),
-        xaxis=dict(title=None, gridcolor="#f3f4f6"), yaxis=dict(title=None),
+        xaxis=dict(
+            title=dict(text="Número de Expedientes", font=dict(size=10)), # <-- CORRECCIÓN REALIZADA
+            gridcolor="#f3f4f6"
+        ), 
+        yaxis=dict(title=None),
         showlegend=False, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)"
     )
 
@@ -112,26 +118,25 @@ def analizar_desarrollo_social(df):
     columnas_tabla = [
         {"name": "Mes", "id": col_mes},
         {"name": "Localidad", "id": col_com},
-        {"name": "Programa / Variable", "id": col_var},
-        {"name": "Acción Operativa", "id": col_act},
-        {"name": "Estatus de Gestión", "id": col_con},
+        {"name": "Estatus (Variable)", "id": col_var},
+        {"name": "Acción Operativa / Actividad", "id": col_act},
         {"name": "Beneficiarios", "id": col_benef}
     ]
 
-    # --- CONSTRUCCIÓN SEGURA DEL LAYOUT ---
+    # --- CONSTRUCCIÓN DEL LAYOUT FINAL ---
     layout_final = html.Div([
         tarjetas_kpi,
         
-        # Bloque de Gráficas Estilizadas
+        # Bloque de Visualizaciones
         dbc.Row([
             dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-pie-chart-fill me-2"), "DISTRIBUCIÓN DEL IMPACTO POR POLÍTICA SOCIAL"], 
+                html.Div([html.I(className="bi bi-pie-chart-fill me-2"), "DISTRIBUCIÓN POR PROGRAMA SOCIAL Y ACCIÓN"], 
                          style={'backgroundColor': '#1f2937', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
                 html.Div(dcc.Graph(figure=fig_programas, config={'displayModeBar': False}), className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px"})
             ], className="shadow-sm mb-4"), md=6),
             
             dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-ui-checks me-2"), "SEMÁFORO DE CONTROL: ACCIONES EJECUTADAS VS. PENDIENTES"], 
+                html.Div([html.I(className="bi bi-ui-checks me-2"), "SEMÁFORO DE GESTIÓN DE APOYOS (VARIABLE)"], 
                          style={'backgroundColor': '#1f2937', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
                 html.Div(dcc.Graph(figure=fig_estatus, config={'displayModeBar': False}), className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px"})
             ], className="shadow-sm mb-4"), md=6),
@@ -142,7 +147,7 @@ def analizar_desarrollo_social(df):
             dbc.Col(html.Div([
                 html.Div([
                     html.I(className="bi bi-people-fill me-2", style={"color": "#bc955c"}),
-                    "PADRÓN Y REGISTRO HISTÓRICO DE APOYOS DIRECTOS - DESARROLLO SOCIAL"
+                    "PADRÓN GENERAL Y HISTÓRICO DE APOYOS DIRECTOS - DESARROLLO SOCIAL"
                 ], style={
                     'backgroundColor': '#691c32', 'color': 'white', 'padding': '12px 16px', 
                     'fontWeight': '700', 'fontSize': '0.8rem', 'borderRadius': '6px 6px 0 0'

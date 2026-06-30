@@ -1,6 +1,7 @@
 http://127.0.0.1:8050/
 cd C:\DashMunicipio
 venv\Scripts\activate
+python app_municipio.py
 
 Bash
 cd C:\DashMunicipio
@@ -11,7 +12,7 @@ Oficios obras publicas avances de obras prioritarias recepcionadas en copladem d
 uno para ecologia para expponer avances revisar en drive 2025
 Proyecto de interes avance de vivero
 
-python app_municipio.py
+
 
 ------------------------------
 
