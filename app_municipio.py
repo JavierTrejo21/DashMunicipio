@@ -46,6 +46,7 @@ inicializar_db()
 
 app = dash.Dash(
     __name__, 
+    server = app.server,
     external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP], 
     suppress_callback_exceptions=True
 )
@@ -352,4 +353,8 @@ def cb_borrar_area(n, aid):
         return dbc.Badge(f"⚠️ Error al eliminar: {e}", color="danger")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
+
+    ##if _name_ == "_main_":
+    ##app.run(debug=True, port=8050)
+
