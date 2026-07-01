@@ -46,10 +46,11 @@ inicializar_db()
 
 app = dash.Dash(
     __name__, 
-    server = app.server,
     external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP], 
     suppress_callback_exceptions=True
 )
+
+server = app.server # Se agrego para que funcione en el despliegue de Render
 
 app.layout = servir_layout()
 
