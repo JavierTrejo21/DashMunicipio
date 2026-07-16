@@ -12,6 +12,9 @@ from layouts import servir_layout
 from visualizaciones import generar_tablero_impacto, seccion_impacto_layout
 from indicadores_pbr import calcular_indicadores_pbr 
 
+# --- IMPORTACIÓN DEL NUEVO MÓDULO DE ALTA DIRECCIÓN (MIR) ---
+from areas.mir_general import analizar_mir_general
+
 # --- DICCIONARIO DE DEFINICIONES ESTRATÉGICAS ---
 DICCIONARIO_AREAS = {
     "5_1_1_RECEPCION_MUNICIPAL_PRESIDENTA": {
@@ -26,6 +29,9 @@ DICCIONARIO_ICONOS_ACUERDOS = {
     3: "bi bi-cash-coin", 
     4: "bi bi-lightbulb"
 }
+
+# Configuración de la ruta del archivo unificado de Monitoreo General MIR
+RUTA_CSV_MIR = r"C:\DashMunicipio\DES01_CHU_02_2026.xlsx"
 
 def obtener_url_csv(url_sheets):
     """Convierte link de compartir en link de descarga CSV para Pandas."""
@@ -49,7 +55,46 @@ app = dash.Dash(
     suppress_callback_exceptions=True
 )
 
-app.layout = servir_layout()
+# --- RE-ESTRUCTURACIÓN DEL LAYOUT PARA POSICIONAMIENTO EN MEDIO ---
+# Extraemos el layout original de servir_layout() que viene como un html.Div o lista de componentes
+layout_original = servir_layout()
+
+# Creamos el nuevo bloque desplegable estilizado de la MIR
+bloque_desplegable_mir = dbc.Container([
+    dbc.Row([
+        dbc.Col(
+            dbc.Button(
+                "📊 Ver Matriz MIR General (Alta Dirección)", 
+                id="btn-toggle-mir-superior", 
+                color="dark", 
+                outline=True,
+                className="w-100 my-2 font-weight-bold shadow-sm",
+                style={"borderRadius": "10px", "fontSize": "0.85rem", "letterSpacing": "1px"}
+            ),
+            width=12
+        )
+    ]),
+    dbc.Collapse(
+        id="collapse-mir-superior",
+        is_open=False, # Cerrado por defecto
+        children=html.Div(id="seccion-superior-mir-consolidada")
+    )
+], fluid=True, className="px-4 mb-3")
+
+# REORDENAMIENTO PRECIOSO EN MEDIO:
+# Inyectamos el 'bloque_desplegable_mir' exactamente en el índice index=2 de la estructura general
+# (Justo después del Navbar/Encabezado y antes del contenedor de tarjetas guindas de acuerdos)
+if hasattr(layout_original, 'children') and isinstance(layout_original.children, list):
+    # Insertamos el bloque dinámicamente en medio de la estructura superior
+    layout_original.children.insert(2, bloque_desplegable_mir)
+    app.layout = layout_original
+else:
+    # Respaldo de seguridad clásico si la estructura cambia
+    app.layout = html.Div([
+        layout_original,
+        bloque_desplegable_mir
+    ])
+
 
 # --- TRADUCTOR COMPONENTE VISUAL PARA LOS INDICADORES PbR ---
 def diseñar_tarjeta_pbr(datos_pbr):
@@ -75,6 +120,30 @@ def diseñar_tarjeta_pbr(datos_pbr):
             ])
         ], color=color_alerta, className="shadow-sm border-0 mb-4")
     return dbc.Alert("Formato de indicadores no reconocido.", color="warning")
+
+
+# =================================================================
+#  CALLBACKS: CONTROL DEL DESPLEGABLE Y CARGA DE DATOS MIR
+# =================================================================
+@app.callback(
+    Output("collapse-mir-superior", "is_open"),
+    [Input("btn-toggle-mir-superior", "n_clicks")],
+    [State("collapse-mir-superior", "is_open")],
+    prevent_initial_call=True
+)
+def cb_toggle_mir(n_clicks, esta_abierto):
+    if n_clicks:
+        return not esta_abierto
+    return esta_abierto
+
+@app.callback(
+    Output("seccion-superior-mir-consolidada", "children"),
+    Input("collapse-mir-superior", "is_open")
+)
+def cb_cargar_mir_dinamica(esta_abierto):
+    if esta_abierto:
+        return analizar_mir_general(RUTA_CSV_MIR)
+    return no_update
 
 
 # --- CALLBACKS DE NAVEGACIÓN: ACUERDOS INSTITUCIONALES ---
@@ -242,7 +311,7 @@ def gestion_modales(n1, n2, n3, n4, s1, s2, s3):
     return False, False, False, [], []
 
 
-# --- CREACIÓN Y CONFIGURACIÓN DE NUEVAS ÁREAS (CON LIMPIEZA STRIP) ---
+# --- CREACIÓN Y CONFIGURACIÓN DE NUEVAS ÁREAS ---
 @app.callback(
     Output("salida-confirmacion", "children"),
     Input("btn-guardar-excel", "n_clicks"),
@@ -261,7 +330,6 @@ def cb_nueva_area(n, nom, ac, txt):
         else:
             df = pd.read_csv(StringIO(txt), sep='\t')
             
-        # Limpieza estricta de nombres de columnas removiendo espacios fantasmas
         df.columns = [str(c).strip() for c in df.columns]
         
         conn = sqlite3.connect(DB_GESTION)

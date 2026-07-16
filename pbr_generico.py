@@ -1,31 +1,44 @@
-# indicadores_pbr.py
+# pbr_modules/pbr_generico.py
 import pandas as pd
 import dash_bootstrap_components as dbc
 from dash import html, dash_table
 import os
 
-def calcular_indicadores_pbr(df_tabla_activa, nombre_tabla_activa=""):
+def calcular_pbr_generico(df):
     """
-    Cédula Centralizada PbR.
-    Lee directamente la columna C del Excel ignorando saltos de línea (Alt+Enter).
+    Motor Central Único PbR - Creado desde Cero.
+    - Obtiene dinámicamente el nombre de la Unidad Responsable activa.
+    - Carga directamente el Excel maestro de la raíz.
+    - Limpia saltos de línea de la columna C y enlaza con la interfaz.
     """
-    ruta_des01 = "DES01_CHU_02_2026.xlsx"
-            
-    if not os.path.exists(ruta_des01):
-        return dbc.Alert(f"⚠️ Archivo maestro '{ruta_des01}' no detectado en la raíz del sistema.", color="danger")
+    ruta_excel = "DES01_CHU_02_2026.xlsx"
+    
+    # 1. DETECTAR EL ÁREA ACTIVA DESDE LA INTERFAZ
+    col_ur_candidatos = [c for c in df.columns if "UNIDAD" in str(c).upper() or "RESPONSABLE" in str(c).upper()]
+    
+    if col_ur_candidatos and len(df) > 0:
+        area_detectada = str(df[col_ur_candidatos[0]].iloc[0]).strip()
+    else:
+        return dbc.Alert("🔍 Seleccione una Unidad Responsable en el menú para visualizar sus indicadores MIR.", color="info", className="fw-bold m-2")
 
+    # 2. SEGURO DE EXISTENCIA DEL ARCHIVO
+    if not os.path.exists(ruta_excel):
+        return dbc.Alert(f"⚠️ Archivo maestro '{ruta_excel}' no detectado en la raíz del sistema.", color="danger", className="m-2")
+
+    # 3. LEER EXCEL LOCALIZANDO LOS ENCABEZADOS DE FORMA INTELIGENTE
     try:
-        df_raw = pd.read_excel(ruta_des01, header=None)
+        df_raw = pd.read_excel(ruta_excel, header=None)
         fila_encabezado = 0  
         for i, fila in df_raw.head(6).iterrows():
             valores_fila = [str(val).upper() for val in fila.values]
             if any("UNIDAD" in val or "RESPONSABLE" in val for val in valores_fila):
                 fila_encabezado = i
                 break
-        df_des01 = pd.read_excel(ruta_des01, header=fila_encabezado)
+        df_des01 = pd.read_excel(ruta_excel, header=fila_encabezado)
     except Exception as e:
-        return dbc.Alert(f"❌ Error al abrir el Excel: {str(e)}", color="danger")
+        return dbc.Alert(f"❌ Error crítico al abrir el Excel maestro: {str(e)}", color="danger", className="m-2")
 
+    # Normalizar los nombres de las columnas a mayúsculas
     df_des01.columns = [str(c).strip().upper() for c in df_des01.columns]
     
     col_ur = next((c for c in df_des01.columns if "UNIDAD" in c or "RESPONSABLE" in c), None)
@@ -35,30 +48,32 @@ def calcular_indicadores_pbr(df_tabla_activa, nombre_tabla_activa=""):
     col_meta = next((c for c in df_des01.columns if "META" in c or "ANUAL" in c), None)
 
     if not col_ur:
-        return dbc.Alert("⚠️ No se localizó la columna de Unidad Responsable en el Excel.", color="danger")
+        return dbc.Alert("⚠️ No se localizó la columna de Unidad Responsable (Columna C) en el documento Excel.", color="danger", className="m-2")
 
-    # Limpieza de saltos de línea tanto en el Excel como en el nombre del botón presionado
+    # 4. LIMPIEZA CLAVE DE SALTOS DE LÍNEA E INCONSISTENCIAS DE TEXTO
     df_des01[col_ur] = df_des01[col_ur].astype(str).str.replace(r'\s+', ' ', regex=True).str.strip()
-    area_busqueda = str(nombre_tabla_activa).replace(r'\s+', ' ').strip()
+    texto_busqueda = area_detectada.replace(r'\s+', ' ').strip()
 
-    # Búsqueda insensible a mayúsculas
-    df_area_mir = df_des01[df_des01[col_ur].str.upper() == area_busqueda.upper()].copy()
+    # Intento 1: Coincidencia Exacta
+    df_area_mir = df_des01[df_des01[col_ur].str.upper() == texto_busqueda.upper()].copy()
 
-    # Búsqueda por palabra clave si falla el match exacto (ej. busca solo "SOCIAL")
+    # Intento 2: Coincidencia Parcial (Rescate por palabra clave si falla algún punto o número)
     if df_area_mir.empty:
-        palabra_clave = area_busqueda.split(' ')[-1]
+        palabra_clave = texto_busqueda.split(' ')[-1] # Ej. toma "SOCIAL" o "MUJERES"
         if len(palabra_clave) > 3:
             df_area_mir = df_des01[df_des01[col_ur].str.contains(palabra_clave, na=False, case=False)].copy()
 
+    # Si no tiene registros asignados en la matriz
     if df_area_mir.empty:
-        return dbc.Alert(f"📋 No se encontraron indicadores en el Excel para: '{nombre_tabla_activa}'", color="warning")
+        return dbc.Alert(f"📋 El área '{area_detectada}' no cuenta con registros de indicadores MIR válidos en este ejercicio.", color="warning", className="m-2")
 
-    # Armado de la matriz MIR
+    # 5. ESTRUCTURAR EL CONTENIDO DE LA CÉDULA
     df_cedula = pd.DataFrame()
     df_cedula['Nivel'] = df_area_mir[col_nivel].fillna("ACTIVIDAD").astype(str).str.upper()
     df_cedula['Indicador'] = df_area_mir[col_resumen].fillna("").astype(str) + " — " + df_area_mir[col_indicador].fillna("").astype(str)
     df_cedula['Meta Anual'] = pd.to_numeric(df_area_mir[col_meta], errors='coerce').fillna(0) if col_meta else 0
 
+    # Capturar columnas de semáforos
     semaforos = [c for c in df_des01.columns if "SEMÁFORO" in c or "SEMAFORO" in c]
     df_cedula['Semaforo T1'] = df_area_mir[semaforos[0]].fillna("VERDE").astype(str).str.upper().str.strip() if len(semaforos) >= 1 else "VERDE"
     df_cedula['Semaforo Anual'] = df_area_mir[semaforos[-1]].fillna("VERDE").astype(str).str.upper().str.strip() if len(semaforos) >= 2 else "VERDE"
@@ -66,17 +81,19 @@ def calcular_indicadores_pbr(df_tabla_activa, nombre_tabla_activa=""):
     df_cedula = df_cedula[df_cedula['Indicador'].str.strip() != "—"]
     datos_tabla = df_cedula.to_dict('records')
 
+    # 6. RETORNAR EL COMPONENTE VISUAL CON FORMATO DE TABLA
     return html.Div([
         html.Div([
-            html.Span("📋 MATRIZ DE INDICADORES PbR", style={"fontWeight": "bold", "color": "#691c32", "fontSize": "12px"}),
-            dbc.Badge(nombre_tabla_activa.upper(), color="danger", className="float-end")
+            html.I(className="bi bi-grid-3x3-gap-fill me-2", style={"color": "#691c32"}),
+            html.Span("MATRIZ DE INDICADORES (MIR) AUTOMÁTICA", style={"fontWeight": "bold", "color": "#1f2937", "fontSize": "12px"}),
+            dbc.Badge(area_detectada.upper(), color="success", className="float-end", style={"fontSize": "11px"})
         ], className="p-2 border-bottom mb-3 bg-light", style={"borderLeft": "4px solid #691c32"}),
 
         dash_table.DataTable(
             data=datos_tabla,
             columns=[
                 {"name": "Nivel MIR", "id": "Nivel"},
-                {"name": "Objetivo y Nombre del Indicador", "id": "Indicador"},
+                {"name": "Objetivo / Nombre del Indicador", "id": "Indicador"},
                 {"name": "Meta Anual", "id": "Meta Anual"},
                 {"name": "Estatus T1", "id": "Semaforo T1"},
                 {"name": "Estatus Anual", "id": "Semaforo Anual"}
