@@ -1,0 +1,99 @@
+/* =========================================================
+   ESTILOS VISUALES Y DESATURACIÓN DASHBOARD PBR - PMD
+   ========================================================= */
+
+:root {
+    --bg-app: #f8fafc;
+    --bg-card: #ffffff;
+    --primary-burgundy: #691c32;
+    --primary-teal: #0d9488;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-subtle: #e2e8f0;
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --- TARJETAS Y CONTENEDORES --- */
+.card-executive {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* --- RESTRUCTURACIÓN DE TABLAS (MENOS CONTRASTE RUSTICO) --- */
+/* Cambia las cabeceras súper oscuras por un tono gris claro/elegante */
+.table-mir-clean {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.table-mir-clean th {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-subtle) !important;
+    padding: 12px 10px;
+}
+
+.table-mir-clean td {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.78rem;
+    color: var(--text-main);
+    padding: 10px;
+}
+
+/* --- TARJETAS DE REGISTRO OPERATIVO (COLUMNAS VERDE / GUINDA) --- */
+.op-card-column {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.op-card-header-teal {
+    background-color: #0d9488;
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 8px;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.op-card-header-burgundy {
+    background-color: #691c32;
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 8px;
+    text-align: center;
+    letter-spacing: 0.5px;
+}

@@ -1,16 +1,56 @@
 # areas/mir_general.py
 import pandas as pd
 import dash_bootstrap_components as dbc
-from dash import html, dash_table
+from dash import html
 import os
 
+# ==========================================
+# FUNCIONES AUXILIARES DE FORMATO
+# ==========================================
+def formatear_valor_celda(val_raw, nombre_columna=""):
+    """
+    Formatea automáticamente los valores de las celdas:
+    - Convierte decimales a porcentajes (ej. 0.8 -> 80%).
+    - Limpia valores 'nan' o nulos.
+    - Formatea enteros y decimales limpios.
+    """
+    if pd.isna(val_raw):
+        return ""
+    
+    val_str = str(val_raw).strip()
+    if val_str.lower() in ["nan", "none", "null"]:
+        return ""
+
+    try:
+        val_num = float(val_raw)
+        
+        es_columna_pct = any(k in nombre_columna.upper() for k in ["%", "PORCENTAJE", "AVANCE", "CUMPLIMIENTO", "PROPORTION"])
+        
+        if es_columna_pct:
+            if 0 < abs(val_num) <= 1.0:
+                return f"{val_num * 100:.1f}%".replace(".0%", "%")
+            elif abs(val_num) > 1.0:
+                return f"{val_num:.1f}%".replace(".0%", "%")
+        else:
+            if 0 < abs(val_num) < 1.0 and len(val_str.split('.')) > 1:
+                return f"{val_num * 100:.1f}%".replace(".0%", "%")
+
+        if val_num.is_integer():
+            return str(int(val_num))
+        return f"{val_num:.2f}".rstrip('0').rstrip('.')
+
+    except ValueError:
+        return val_str
+
+
+# ==========================================
+# 1. VISTA GENERAL DE LA MIR (ALTA DIRECCIÓN)
+# ==========================================
 def analizar_mir_general(ruta_excel_des01):
     """
-    Módulo Ejecutivo de Alta Dirección para la Matriz de Indicadores para Resultados (MIR).
-    - Procesa el archivo DES01 directamente en formato Excel (.xlsx).
-    - Remueve por completo las cajas de filtros para corregir la estética superior y los huecos en blanco.
-    - Unifica cromáticamente todo el bloque inicial en Guinda Institucional.
-    - Mantiene inmovilizados los encabezados superiores de forma fluida.
+    Módulo Ejecutivo para la Matriz de Indicadores para Resultados (MIR Completa).
+    - Renderiza mediante una Tabla HTML nativa con scroll y encabezados fijos (Sticky Headers).
+    - Paleta de colores Ejecutiva / Formal de alto contraste.
     """
     if not os.path.exists(ruta_excel_des01):
         return dbc.Alert(
@@ -24,169 +64,297 @@ def analizar_mir_general(ruta_excel_des01):
         )
 
     try:
-        # 1. Cargar el Excel capturando los dos niveles de encabezado
         df_headers = pd.read_excel(ruta_excel_des01, header=[1, 2], sheet_name=0)
         
-        # Estructuración limpia de los dos niveles de títulos
-        nuevas_columnas = []
-        for col_superior, col_inferior in df_headers.columns:
-            c_sup = str(col_superior).strip()
-            c_inf = str(col_inferior).strip()
-            
-            # Unificamos bajo el mismo concepto superior para forzar la fusión cromática
-            if "Unnamed:" in c_sup or c_sup == "" or c_sup == "nan":
-                c_sup = "Información del programa"
-                
-            nuevas_columnas.append((c_sup, c_inf))
-            
-        df_headers.columns = pd.MultiIndex.from_tuples(nuevas_columnas)
+        col_unidad = next((c for c in df_headers.columns if "Unidad Responsable" in str(c[1])), df_headers.columns[2])
+        df_mir = df_headers.dropna(subset=[col_unidad]).copy()
 
-        # Buscar la columna Unidad Responsable de forma flexible
-        col_unidad_tupla = next((c for c in df_headers.columns if "Unidad Responsable" in c[1]), None)
-        if not col_unidad_tupla:
-            return dbc.Alert(f"❌ Error de Estructura: No se encontró la columna 'Unidad Responsable'.", color="danger")
-            
-        # Limpieza de filas vacías
-        df_mir = df_headers.dropna(subset=[col_unidad_tupla]).copy()
         if df_mir.empty:
-            return dbc.Alert("⚠️ No se encontraron filas válidas con una 'Unidad Responsable' asignada.", color="info")
-        
-        col_semaforos_tubras = [c for c in df_mir.columns if 'Semáforo' in c[1]]
+            return dbc.Alert("⚠️ No se encontraron filas válidas con datos asignados.", color="info")
 
-        # 2. CONSTRUCCIÓN DE COLUMNAS PARA LA DATATABLE
-        columnas_multi = []
+        # Agrupación del Encabezado Superior (Fila 1)
+        bloques_superiores = []
+        bloque_actual = None
+        conteo_columnas = 0
+
+        for i, (col_superior, col_inferior) in enumerate(df_mir.columns):
+            c_sup = str(col_superior).strip()
+            
+            if i <= 4 or "Unnamed:" in c_sup or c_sup == "" or c_sup.lower() == "nan":
+                c_sup = "INFORMACIÓN DEL PROGRAMA"
+
+            if c_sup != bloque_actual:
+                if bloque_actual is not None:
+                    bloques_superiores.append((bloque_actual, conteo_columnas))
+                bloque_actual = c_sup
+                conteo_columnas = 1
+            else:
+                conteo_columnas += 1
+
+        if bloque_actual is not None:
+            bloques_superiores.append((bloque_actual, conteo_columnas))
+
+        th_superiores = []
+        for nombre_bloque, span in bloques_superiores:
+            bg_color = "#047857"
+            nombre_upper = nombre_bloque.upper()
+            
+            if "INFORMACIÓN DEL PROGRAMA" in nombre_upper or "INDICADORES" in nombre_upper:
+                bg_color = "#065F46"
+            elif "PARAMETRIZACIÓN" in nombre_upper:
+                bg_color = "#047857"
+            elif "PRIMER TRIMESTRE" in nombre_upper or "TERCER TRIMESTRE" in nombre_upper:
+                bg_color = "#1E3A8A"
+            elif "SEGUNDO TRIMESTRE" in nombre_upper or "CUARTO TRIMESTRE" in nombre_upper:
+                bg_color = "#1E40AF"
+            elif "AVANCE" in nombre_upper:
+                bg_color = "#0F172A"
+
+            th_superiores.append(
+                html.Th(nombre_bloque.upper(), colSpan=span, style={
+                    'backgroundColor': bg_color,
+                    'color': '#FFFFFF',
+                    'padding': '11px 10px', 
+                    'textAlign': 'center',
+                    'fontSize': '11.5px',
+                    'fontWeight': '800', 
+                    'border': '1px solid rgba(255, 255, 255, 0.2)',
+                    'letterSpacing': '0.6px',
+                    'position': 'sticky',
+                    'top': '0',
+                    'zIndex': '10'
+                })
+            )
+
+        header_row_1 = html.Tr(th_superiores)
+
+        # Encabezado Inferior (Fila 2)
+        header_cols = []
         for c_sup, c_inf in df_mir.columns:
-            columnas_multi.append({
-                "name": [c_sup, c_inf],
-                "id": c_inf
-            })
+            header_cols.append(
+                html.Th(str(c_inf).strip().upper(), style={
+                    'backgroundColor': '#1E293B',
+                    'color': '#FFFFFF',
+                    'padding': '10px 8px', 
+                    'fontSize': '10.5px',
+                    'fontWeight': '700',
+                    'textAlign': 'center',
+                    'border': '1px solid #334155',
+                    'minWidth': '170px',
+                    'whiteSpace': 'normal',
+                    'verticalAlign': 'middle',
+                    'position': 'sticky',
+                    'top': '37px',
+                    'zIndex': '9'
+                })
+            )
+        header_row_2 = html.Tr(header_cols)
 
-        # Aplanamos los datos mapeándolos directo al ID de la Fila 2
-        datos_aplanados = []
-        for _, row in df_mir.iterrows():
-            dict_fila = {}
+        # Filas de Datos
+        body_rows = []
+        for idx, row in df_mir.iterrows():
+            cells = []
+            bg_row = '#F8FAFC' if idx % 2 == 0 else '#FFFFFF'
+            
             for c_sup, c_inf in df_mir.columns:
-                dict_fila[c_inf] = row[(c_sup, c_inf)]
-            datos_aplanados.append(dict_fila)
+                val_raw = row[(c_sup, c_inf)]
+                c_inf_str = str(c_inf).strip()
+                val_formatted = formatear_valor_celda(val_raw, nombre_columna=c_inf_str)
+                
+                cell_style = {
+                    'padding': '11px 13px',
+                    'fontSize': '12px',
+                    'fontWeight': '500',
+                    'color': '#0F172A',
+                    'border': '1px solid #CBD5E1',
+                    'backgroundColor': bg_row,
+                    'verticalAlign': 'middle',
+                    'lineHeight': '1.4'
+                }
 
-        # 3. PALETA CROMÁTICA COMPLETA POR BLOQUES DE ENCABEZADO
-        estilos_encabezados_bloques = []
-        for c_sup, c_inf in df_mir.columns:
-            bg_color = "#e2e8f0" 
-            text_color = "#1a202c"
-            
-            if "Información del programa" in c_sup or "Indicadores" in c_sup:
-                bg_color = "#691c32"  # Guinda Institucional exacto
-                text_color = "white"
-            elif "Parametrización" in c_sup:
-                bg_color = "#1e3a8a"  # Azul Rey Corporativo
-                text_color = "white"
-            elif "Primer Trimestre" in c_sup:
-                bg_color = "#f1f5f9"
-                text_color = "#1e293b"
-            elif "Segundo Trimestre" in c_sup:
-                bg_color = "#cbd5e1"
-                text_color = "#1e293b"
-            elif "Tercer Trimestre" in c_sup:
-                bg_color = "#f1f5f9"
-                text_color = "#1e293b"
-            elif "Cuarto Trimestre" in c_sup:
-                bg_color = "#cbd5e1"
-                text_color = "#1e293b"
-            elif "Avance anual" in c_sup or "Avance Anual" in c_sup:
-                bg_color = "#0f172a"  # Gris Oscuro Pizarra
-                text_color = "white"
+                val_upper = val_formatted.upper()
+                if "VERDE" in val_upper:
+                    cell_style.update({'backgroundColor': '#DCFCE7', 'color': '#14532D', 'fontWeight': '700', 'textAlign': 'center'})
+                elif "AMARILLO" in val_upper:
+                    cell_style.update({'backgroundColor': '#FEF08A', 'color': '#713F12', 'fontWeight': '700', 'textAlign': 'center'})
+                elif "ROJO" in val_upper:
+                    cell_style.update({'backgroundColor': '#FEE2E2', 'color': '#7F1D1D', 'fontWeight': '700', 'textAlign': 'center'})
+                elif c_inf_str.upper() == 'NIVEL':
+                    cell_style.update({'textAlign': 'center', 'fontWeight': '800', 'color': '#065F46'})
+                elif "%" in val_formatted:
+                    cell_style.update({'textAlign': 'right', 'fontWeight': '700'})
 
-            estilos_encabezados_bloques.append({
-                'if': {'column_id': c_inf},
-                'backgroundColor': bg_color,
-                'color': text_color,
-                'border': '1px solid #dee2e6' # Mantiene la cuadrícula limpia
-            })
+                cells.append(html.Td(val_formatted, style=cell_style))
+                
+            body_rows.append(html.Tr(cells))
 
-        # 4. CONFIGURACIÓN E INTEGRACIÓN DE LA TABLA LIMPIA Y REESTRUCTURADA
-        tabla_mir = dash_table.DataTable(
-            data=datos_aplanados,
-            columns=columnas_multi,
-            merge_duplicate_headers=True, # Fusiona celdas superiores del mismo bloque
-            style_as_list_view=False,
-            page_size=45,
-            sort_action="native",         # Conservamos la ordenación de columnas ya que es muy útil
-            
-            # Remoción de filtros nativos para corregir la estética
-            filter_action="none",         
-            
-            # Fijación multidireccional segura
-            fixed_rows={'headers': True},
-            fixed_columns={'headers': True, 'data': 1},
-            
-            style_table={
-                'overflowX': 'auto',
-                'overflowY': 'auto',
-                'maxHeight': '480px',
-                'minWidth': '100%'
-            },
-            style_header={
-                'fontWeight': 'bold',
-                'fontSize': '10.5px',
-                'padding': '12px 10px',
-                'textAlign': 'center',
-                'border': '1px solid #cbd5e0'
-            },
-            style_header_conditional=estilos_encabezados_bloques,
-            
-            style_cell={
-                'padding': '10px 14px',
-                'fontSize': '11px',
-                'color': '#2d3748',
-                'fontFamily': 'Helvetica, Arial, sans-serif',
-                'whiteSpace': 'normal',
-                'height': 'auto',
-                'minWidth': '170px',
-                'maxWidth': '320px',
-                'backgroundColor': 'white',
-                'border': '1px solid #e2e8f0'
-            },
-            style_cell_conditional=[
-                {'if': {'column_id': c[1]}, 'textAlign': 'left'} for c in df_mir.columns
-            ],
-            
-            # Semáforos condicionales trimestrales en base a los datos
-            style_data_conditional=[
-                {
-                    'if': {
-                        'column_id': c[1],
-                        'filter_query': f'{{{c[1]}}} contains "VERDE"'
-                    },
-                    'backgroundColor': '#c6f6d5', 'color': '#22543d', 'fontWeight': 'bold'
-                } for c in col_semaforos_tubras
-            ] + [
-                {
-                    'if': {
-                        'column_id': c[1],
-                        'filter_query': f'{{{c[1]}}} contains "AMARILLO"'
-                    },
-                    'backgroundColor': '#feebc8', 'color': '#744210', 'fontWeight': 'bold'
-                } for c in col_semaforos_tubras
-            ] + [
-                {
-                    'if': {
-                        'column_id': c[1],
-                        'filter_query': f'{{{c[1]}}} contains "ROJO"'
-                    },
-                    'backgroundColor': '#fed7d7', 'color': '#742a2a', 'fontWeight': 'bold'
-                } for c in col_semaforos_tubras
-            ],
+        tabla_html = html.Table(
+            [html.Thead([header_row_1, header_row_2]), html.Tbody(body_rows)],
+            style={'width': '100%', 'borderCollapse': 'separate', 'borderSpacing': '0'}
         )
 
         return html.Div([
             html.Div([
-                html.Span("📋 MATRIZ DE INDICADORES PARA RESULTADOS (MIR CONSOLIDADA)", style={"fontWeight": "800", "color": "#691c32", "fontSize": "12px"}),
-                html.Span(" — VISTA EJECUTIVA CONSOLIDAD", style={"color": "#718096", "fontSize": "10px", "fontWeight": "600", "marginLeft": "5px"})
-            ], style={"padding": "12px 16px", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "borderRadius": "10px 10px 0 0"}),
+                html.Span("📋 MATRIZ DE INDICADORES PARA RESULTADOS (MIR CONSOLIDADA)", style={"fontWeight": "800", "color": "#065F46", "fontSize": "12.5px", "letterSpacing": "0.5px"}),
+                html.Span(" — VISTA GENERAL", style={"color": "#475569", "fontSize": "10.5px", "fontWeight": "700", "marginLeft": "5px"})
+            ], style={"padding": "12px 16px", "backgroundColor": "#F1F5F9", "borderBottom": "1px solid #CBD5E1", "borderRadius": "12px 12px 0 0"}),
             
-            html.Div(tabla_mir, style={"padding": "12px"})
-        ], className="bg-white border shadow-sm", style={"borderRadius": "10px"})
+            html.Div(tabla_html, style={"padding": "0px", "overflowX": "auto", "overflowY": "auto", "maxHeight": "520px"})
+        ], className="bg-white border shadow-sm", style={"borderRadius": "12px", "borderTop": "4px solid #065F46"})
 
     except Exception as e:
-        return dbc.Alert(f"❌ Error crítico al procesar la MIR con Doble Encabezado: {str(e)}", color="danger")
+        return dbc.Alert(f"❌ Error al generar vista HTML: {str(e)}", color="danger")
+
+
+# ==========================================
+# 2. RESUMEN DE INDICADORES POR ÁREA (COLUMNA C)
+# ==========================================
+def generar_tabla_resumen_area(ruta_excel_des01, unidad_responsable_seleccionada):
+    """
+    Genera el resumen de la MIR para una área específica filtrando por la Columna C (Unidad Responsable)
+    y trayendo solo las columnas: G, I, J, M, O, P, Y, AC, AG, AK, AM, AN, AO.
+    """
+    if not os.path.exists(ruta_excel_des01):
+        return dbc.Alert("⚠️ No se encontró el archivo de origen de datos DES01.", color="warning")
+
+    try:
+        # Cargar los 2 niveles de encabezado
+        df_raw = pd.read_excel(ruta_excel_des01, header=[1, 2], sheet_name=0)
+        
+        # Columna C es el índice 2 (Unidad Responsable)
+        col_unidad = df_raw.columns[2]
+        
+        # Filtrar filas donde la Columna C coincida con el Área elegida
+        df_area = df_raw[df_raw[col_unidad].astype(str).str.strip().str.upper() == str(unidad_responsable_seleccionada).strip().upper()].copy()
+
+        if df_area.empty:
+            return dbc.Alert(f"ℹ️ No se encontraron indicadores registrados para el área: {unidad_responsable_seleccionada}", color="info")
+
+        # Mapeo por posición de letra (0-indexed):
+        # G=6, I=8, J=9, M=12, O=14, P=15, Y=24, AC=28, AG=32, AK=36, AM=38, AN=39, AO=40
+        indices_columnas = [6, 8, 9, 12, 14, 15, 24, 28, 32, 36, 38, 39, 40]
+        
+        indices_validos = [i for i in indices_columnas if i < len(df_raw.columns)]
+        cols_seleccionadas = [df_raw.columns[i] for i in indices_validos]
+
+        # 1. ENCABEZADOS SUPERIORES (BLOQUES AGRUPADOS DINÁMICAMENTE)
+        bloques_superiores = []
+        bloque_actual = None
+        conteo = 0
+
+        for col_sup, _ in cols_seleccionadas:
+            c_sup = str(col_sup).strip()
+            if "Unnamed:" in c_sup or c_sup == "" or c_sup.lower() == "nan":
+                c_sup = "INFORMACIÓN DEL PROGRAMA"
+
+            if c_sup != bloque_actual:
+                if bloque_actual is not None:
+                    bloques_superiores.append((bloque_actual, conteo))
+                bloque_actual = c_sup
+                conteo = 1
+            else:
+                conteo += 1
+        if bloque_actual is not None:
+            bloques_superiores.append((bloque_actual, conteo))
+
+        th_superiores = []
+        for nombre_bloque, span in bloques_superiores:
+            bg_color = "#065F46"
+            n_up = nombre_bloque.upper()
+            
+            if "PROGRAMA" in n_up or "INFORMACIÓN" in n_up or "INDICADORES" in n_up:
+                bg_color = "#065F46"
+            elif "PARAMETRIZACIÓN" in n_up or "METAS" in n_up:
+                bg_color = "#047857"
+            elif "TRIMESTRE" in n_up:
+                bg_color = "#1E3A8A"
+            elif "AVANCE" in n_up or "RESULTADO" in n_up:
+                bg_color = "#0F172A"
+
+            th_superiores.append(
+                html.Th(nombre_bloque.upper(), colSpan=span, style={
+                    'backgroundColor': bg_color, 
+                    'color': '#FFFFFF', 
+                    'padding': '11px 10px', 
+                    'textAlign': 'center', 
+                    'fontSize': '11px', 
+                    'fontWeight': '800',
+                    'border': '1px solid rgba(255,255,255,0.2)', 
+                    'position': 'sticky', 
+                    'top': '0', 
+                    'zIndex': '10'
+                })
+            )
+        row_header_1 = html.Tr(th_superiores)
+
+        # 2. SUBENCABEZADOS DE LAS COLUMNAS ESPECÍFICAS
+        th_inferiores = []
+        for c_sup, c_inf in cols_seleccionadas:
+            th_inferiores.append(
+                html.Th(str(c_inf).strip().upper(), style={
+                    'backgroundColor': '#1E293B', 
+                    'color': '#FFFFFF', 
+                    'padding': '10px 8px',
+                    'fontSize': '10.5px', 
+                    'fontWeight': '700', 
+                    'textAlign': 'center',
+                    'border': '1px solid #334155', 
+                    'minWidth': '160px', 
+                    'whiteSpace': 'normal',
+                    'verticalAlign': 'middle', 
+                    'position': 'sticky', 
+                    'top': '37px', 
+                    'zIndex': '9'
+                })
+            )
+        row_header_2 = html.Tr(th_inferiores)
+
+        # 3. FILAS DE DATOS FORMATO FORMAL Y SEÑALIZADO
+        body_rows = []
+        for idx, row in df_area.iterrows():
+            cells = []
+            bg_row = '#F8FAFC' if idx % 2 == 0 else '#FFFFFF'
+
+            for c_sup, c_inf in cols_seleccionadas:
+                val_raw = row[(c_sup, c_inf)]
+                c_inf_str = str(c_inf).strip()
+                val_fmt = formatear_valor_celda(val_raw, nombre_columna=c_inf_str)
+
+                cell_style = {
+                    'padding': '10px 12px', 
+                    'fontSize': '11.5px', 
+                    'fontWeight': '500',
+                    'color': '#0F172A', 
+                    'border': '1px solid #CBD5E1', 
+                    'backgroundColor': bg_row,
+                    'verticalAlign': 'middle', 
+                    'lineHeight': '1.3'
+                }
+
+                val_upper = val_fmt.upper()
+                if "VERDE" in val_upper:
+                    cell_style.update({'backgroundColor': '#DCFCE7', 'color': '#14532D', 'fontWeight': '700', 'textAlign': 'center'})
+                elif "AMARILLO" in val_upper:
+                    cell_style.update({'backgroundColor': '#FEF08A', 'color': '#713F12', 'fontWeight': '700', 'textAlign': 'center'})
+                elif "ROJO" in val_upper:
+                    cell_style.update({'backgroundColor': '#FEE2E2', 'color': '#7F1D1D', 'fontWeight': '700', 'textAlign': 'center'})
+                elif c_inf_str.upper() == 'NIVEL':
+                    cell_style.update({'textAlign': 'center', 'fontWeight': '800', 'color': '#065F46'})
+                elif "%" in val_fmt:
+                    cell_style.update({'textAlign': 'right', 'fontWeight': '700'})
+
+                cells.append(html.Td(val_fmt, style=cell_style))
+
+            body_rows.append(html.Tr(cells))
+
+        tabla_resumen = html.Table(
+            [html.Thead([row_header_1, row_header_2]), html.Tbody(body_rows)],
+            style={'width': '100%', 'borderCollapse': 'separate', 'borderSpacing': '0'}
+        )
+
+        return html.Div([
+            html.Div(tabla_resumen, style={"overflowX": "auto", "overflowY": "auto", "maxHeight": "480px"})
+        ], className="bg-white border shadow-sm", style={"borderRadius": "12px", "borderTop": "4px solid #065F46"})
+
+    except Exception as e:
+        return dbc.Alert(f"❌ Error al procesar el resumen por área: {str(e)}", color="danger")

@@ -1,7 +1,7 @@
+import dash_bootstrap_components as dbc
+from dash import dcc, html
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html
-import dash_bootstrap_components as dbc
 import pandas as pd
 
 # Importar el mapa centralizado
@@ -53,13 +53,52 @@ def generar_tablero_impacto(df, nombre_tabla=None):
 
 
 def seccion_impacto_layout():
-    """Línea divisional y contenedor base"""
+    """Genera el contenedor visual unificado e integrado para la sección de evaluación y rendición de cuentas."""
     return html.Div([
-        html.Div(style={'borderTop': f'3px solid {DORADO_INST}', 'width': '80px', 'margin': '40px 0 20px 15px'}),
-        html.Div([
-            html.H3("SISTEMA DE EVALUACIÓN Y RENDICIÓN DE CUENTAS", className="font-weight-bold text-dark mb-1", style={'fontSize': '1.1rem', 'letterSpacing': '0.5px'}),
-            html.P("Evidencia analítica de impacto social directo asociada a los objetivos institucionales.", className="text-muted", style={'fontSize': '0.8rem'})
-        ], style={'paddingLeft': '15px', 'marginBottom': '25px'}),
-        
-        html.Div(id='contenedor-graficas-impacto')
+        html.Div(
+            [
+                # Encabezado interno de la sección
+                html.Div(
+                    [
+                        html.Div(
+                            style={
+                                "width": "35px",
+                                "height": "4px",
+                                "backgroundColor": "#1ca2a9",
+                                "borderRadius": "2px",
+                                "marginBottom": "10px",
+                            }
+                        ),
+                        html.H4(
+                            "SISTEMA DE EVALUACIÓN Y RENDICIÓN DE CUENTAS",
+                            className="m-0",
+                            style={
+                                "fontSize": "1rem",
+                                "fontWeight": "700",
+                                "color": "#691c32",
+                                "letterSpacing": "0.3px",
+                            },
+                        ),
+                        html.P(
+                            "Evidencia analítica de impacto social directo asociada a los objetivos institucionales.",
+                            className="m-0 text-muted mt-1",
+                            style={"fontSize": "0.8rem", "fontWeight": "500"},
+                        ),
+                    ],
+                    className="pb-3 mb-3",
+                    style={"borderBottom": "1px solid #f1f5f9"}
+                ),
+                
+                # Contenedor donde se cargan dinámicamente las gráficas de impacto
+                html.Div(id='contenedor-graficas-impacto')
+            ],
+            className="p-4 bg-white shadow-sm mt-4",
+            style={
+                "borderTop": "5px solid #1ca2a9",
+                "borderRadius": "10px",
+                "borderLeft": "1px solid #dee2e6",
+                "borderRight": "1px solid #dee2e6",
+                "borderBottom": "1px solid #dee2e6",
+            },
+        )
     ])
