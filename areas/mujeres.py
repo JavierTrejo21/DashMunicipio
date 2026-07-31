@@ -1,13 +1,13 @@
 # areas/mujeres.py
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
 
 def analizar_instancia_mujeres(df):
     """
     Módulo analítico premium para la Instancia Municipal de las Mujeres.
-    Diseño horizontal compacto para las líneas de acción secundarias.
+    Muestra los indicadores con tarjetas idénticas en estilo, tono y contenedor a la referencia.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de la Instancia de las Mujeres no contiene registros válidos o está vacío.", color="warning")
@@ -32,99 +32,156 @@ def analizar_instancia_mujeres(df):
     df_muj[col_act] = df_muj[col_act].fillna("SIN ESPECIFICAR").astype(str).str.strip()
     df_muj[col_mes] = df_muj[col_mes].fillna("S/M").astype(str).str.strip().str.upper()
 
-    # --- CÁLCULO DE INDICADORES (KPIs) ---
+    # --- CÁLCULO DE MÉTRICAS GENERALES PARA EL RESUMEN DEL ÁREA ---
+    total_registros = len(df_muj)
     total_atendidos = int(df_muj[col_atn].sum())
-    total_inversion = df_muj[col_inv].sum()
     
     df_canalizaciones = df_muj[df_muj[col_var].str.contains("CANALIZA", na=False)]
     total_canalizados = int(df_canalizaciones[col_atn].sum()) if not df_canalizaciones.empty else 0
 
-    # --- TARJETAS SUPERIORES ESTILO INFOGRÁFICO ---
+    # --- TARJETAS KPI ESTANDARIZADAS (CONTENEDOR Y TONO IDÉNTICOS A LA REFERENCIA) ---
+    estilo_contenedor_ref = {
+        "borderRadius": "10px", 
+        "border": "1px solid #cbd5e1", 
+        "backgroundColor": "#ffffff",
+        "boxShadow": "0 1px 3px rgba(0,0,0,0.02)"
+    }
+
     tarjetas_kpi = dbc.Row([
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#691c32", "borderRadius": "8px 0 0 8px"}),
-                html.Small("MUJERES Y PERSONAS ATENDIDAS", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.H3(f"{total_atendidos:,.0f} Benef.", className="m-0 font-weight-bold mt-1", style={"color": "#691c32", "fontSize": "1.2rem"}),
-                html.Small("Alcance acumulado en actividades y talleres", className="font-weight-bold d-block", style={"fontSize": "0.6rem", "color": "#374151"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
+                html.Small("TOTAL DE ACTIVIDADES", className="d-block text-muted mb-1", style={"fontSize": "0.62rem", "letterSpacing": "1px", "fontWeight": "700"}),
+                html.H3(f"{total_registros:,}", className="m-0", style={"color": "#1e293b", "fontSize": "1.25rem", "fontWeight": "700"})
+            ], className="p-3 h-100 d-flex flex-column justify-content-center", style=estilo_contenedor_ref), 
+            width=12, sm=4, className="mb-3"
         ),
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#115e59", "borderRadius": "8px 0 0 8px"}),
-                html.Small("CASOS CANALIZADOS A OTRAS INSTANCIAS", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.H3(f"{total_canalizados} Casos", className="m-0 font-weight-bold mt-1", style={"color": "#115e59", "fontSize": "1.2rem"}),
-                html.Small("Protección, seguimiento y vinculación segura", className="font-weight-bold d-block", style={"fontSize": "0.6rem", "color": "#374151"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
+                html.Small("PERSONAS ATENDIDAS", className="d-block text-muted mb-1", style={"fontSize": "0.62rem", "letterSpacing": "1px", "fontWeight": "700"}),
+                html.H3(f"{total_atendidos:,}", className="m-0", style={"color": "#1e293b", "fontSize": "1.25rem", "fontWeight": "700"})
+            ], className="p-3 h-100 d-flex flex-column justify-content-center", style=estilo_contenedor_ref), 
+            width=12, sm=4, className="mb-3"
         ),
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#bc955c", "borderRadius": "8px 0 0 8px"}),
-                html.Small("INVERSIÓN SOCIAL DIRECTA", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.H3(f"${total_inversion:,.2f}", className="m-0 font-weight-bold mt-1", style={"color": "#bc955c", "fontSize": "1.2rem"}),
-                html.Small("Fondo asignado a talleres y apoyos", className="font-weight-bold d-block", style={"fontSize": "0.6rem", "color": "#374151"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
+                html.Small("CASOS CANALIZADOS", className="d-block text-muted mb-1", style={"fontSize": "0.62rem", "letterSpacing": "1px", "fontWeight": "700"}),
+                html.H3(f"{total_canalizados:,}", className="m-0", style={"color": "#1e293b", "fontSize": "1.25rem", "fontWeight": "700"})
+            ], className="p-3 h-100 d-flex flex-column justify-content-center", style=estilo_contenedor_ref), 
+            width=12, sm=4, className="mb-3"
         ),
     ], className="mb-2")
 
-    # --- GENERACIÓN DE MINI-TARJETAS HORIZONTALES (BADGES DE ACCIÓN) ---
+    # --- PANEL DE PROGRESO CON PALETA INSTITUCIONAL ---
     df_var_filtrado = df_muj[~df_muj[col_var].str.contains("MUJERES BENEFICIARIAS", na=False)]
-    df_var_agrupado = df_var_filtrado.groupby(col_var)[col_atn].sum().reset_index(name='TOTAL_ATENDIDOS')
     
-    colores_badges = ["#115e59", "#bc955c", "#691c32", "#2563eb", "#d97706", "#4b5563"]
+    df_var_agrupado = df_var_filtrado.groupby(col_var).agg(
+        TOTAL_VALOR=(col_atn, 'sum'),
+        CANTIDAD_REGISTROS=(col_act, 'count')
+    ).reset_index()
     
-    badges_items = []
-    for i, row in df_var_agrupado.iterrows():
-        color_actual = colores_badges[i % len(colores_badges)]
-        badges_items.append(
-            html.Div([
-                html.Div([
-                    html.I(className="bi bi-circle-fill me-1", style={"fontSize": "0.5rem", "color": color_actual})
-                ], className="d-flex align-items-center mb-1"),
-                html.H4(f"{row['TOTAL_ATENDIDOS']:,}", className="font-weight-bold m-0", style={"color": color_actual, "fontSize": "1.1rem"}),
-                html.Small(row[col_var].title(), className="d-block text-muted font-weight-bold mt-1", style={"fontSize": "0.65rem", "lineHeight": "1.1"})
-            ], style={
-                "minWidth": "115px", 
-                "flex": "1", 
-                "backgroundColor": "#ffffff", 
-                "border": "1px solid #e5e7eb", 
-                "borderTop": f"3px solid {color_actual}",
-                "borderRadius": "6px", 
-                "padding": "10px 8px", 
-                "textAlign": "center",
-                "boxShadow": "0 1px 2px rgba(0,0,0,0.05)"
-            })
-        )
+    df_var_agrupado = df_var_agrupado.sort_values(by='TOTAL_VALOR', ascending=False)
+    max_val = df_var_agrupado['TOTAL_VALOR'].max() if not df_var_agrupado.empty else 1
+    
+    colores_institucionales = ["#691c32", "#115e59", "#bc955c", "#374151", "#047857", "#1e40af"]
 
-    panel_horizontal = html.Div(
-        badges_items, 
-        style={
-            "display": "flex", 
-            "flexDirection": "row", 
-            "gap": "8px", 
-            "overflowX": "auto", 
-            "paddingBottom": "5px",
-            "alignItems": "stretch"
-        }
+    items_lineas_accion = []
+    for i, row in df_var_agrupado.iterrows():
+        nombre_var = str(row[col_var])
+        val = row['TOTAL_VALOR']
+        num_regs = row['CANTIDAD_REGISTROS']
+        porcentaje = min(int((val / max_val) * 100), 100) if max_val > 0 else 0
+        color = colores_institucionales[i % len(colores_institucionales)]
+        
+        if "TALLER" in nombre_var:
+            texto_num = f"{num_regs}"
+            texto_unidad = "talleres" if num_regs != 1 else "taller"
+        elif "INSTITUC" in nombre_var:
+            texto_num = f"{val}"
+            texto_unidad = "inst." if val != 1 else "inst."
+        elif "RED" in nombre_var:
+            texto_num = f"{val}"
+            texto_unidad = "redes" if val != 1 else "red"
+        elif "CANALIZA" in nombre_var:
+            texto_num = f"{val}"
+            texto_unidad = "casos" if val != 1 else "caso"
+        else:
+            texto_num = f"{val}"
+            texto_unidad = "acciones"
+
+        item = html.Div([
+            html.Div([
+                html.Span(nombre_var.title(), className="d-block mb-1", style={"fontSize": "0.75rem", "fontWeight": "700", "color": "#111827"}),
+                html.Div(
+                    html.Div(style={"width": f"{porcentaje}%", "backgroundColor": color, "height": "8px", "borderRadius": "4px"}),
+                    className="w-100", style={"height": "8px", "borderRadius": "4px", "backgroundColor": "#e5e7eb"}
+                )
+            ], style={"flex": "1", "paddingRight": "20px"}),
+            
+            html.Div([
+                html.Span(texto_num, style={"fontSize": "0.9rem", "fontWeight": "800", "color": color}),
+                html.Span(f" {texto_unidad}", style={"fontSize": "0.7rem", "fontWeight": "600", "color": "#4b5563", "marginLeft": "3px"})
+            ], style={"minWidth": "90px", "textAlign": "right", "display": "flex", "align-items": "baseline", "justify-content": "flex-end"})
+            
+        ], className="mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between")
+        
+        items_lineas_accion.append(item)
+
+    panel_progreso_limpio = html.Div(
+        items_lineas_accion if items_lineas_accion else [html.P("Sin registros disponibles.", className="text-muted text-center")],
+        style={"maxHeight": "240px", "overflowY": "auto", "paddingRight": "5px"}
     )
 
-    # --- GRÁFICA 2: COMPORTAMIENTO TEMPORAL (BARRAS MENSUALES ESTILIZADAS) ---
+    # --- GRÁFICA 2: COMPORTAMIENTO TEMPORAL ---
     df_mes_agrupado = df_muj.groupby(col_mes)[col_atn].sum().reset_index(name='TOTAL_MES')
     meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
     df_mes_agrupado[col_mes] = pd.Categorical(df_mes_agrupado[col_mes], categories=meses_orden, ordered=True)
     df_mes_agrupado = df_mes_agrupado.sort_values(col_mes).dropna()
 
-    fig_temporal = px.bar(
-        df_mes_agrupado, x=col_mes, y='TOTAL_MES',
-        color_discrete_sequence=["#bc955c"]
-    )
+    fig_temporal = go.Figure()
+    
+    for i, row in df_mes_agrupado.iterrows():
+        mes = row[col_mes]
+        val = row['TOTAL_MES']
+        color_b = colores_institucionales[i % len(colores_institucionales)]
+        
+        fig_temporal.add_trace(go.Bar(
+            x=[mes], y=[val],
+            marker_color=color_b,
+            showlegend=False,
+            hoverinfo='x+y'
+        ))
+
+    anotaciones_pines = []
+    for i, row in df_mes_agrupado.iterrows():
+        mes = row[col_mes]
+        val = row['TOTAL_MES']
+        color_b = colores_institucionales[i % len(colores_institucionales)]
+        
+        anotaciones_pines.append(dict(
+            x=mes, y=val,
+            text=f"<b>{val}</b>",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=1.5,
+            arrowcolor=color_b,
+            ax=0,
+            ay=-30,
+            bgcolor="white",
+            bordercolor=color_b,
+            borderwidth=2,
+            borderpad=3,
+            font=dict(size=10, color=color_b)
+        ))
+
     fig_temporal.update_layout(
-        margin=dict(l=10, r=10, t=10, b=20),
+        margin=dict(l=20, r=20, t=30, b=20),
         xaxis=dict(title=None, tickfont=dict(size=10, color="#1f2937"), gridcolor="#f3f4f6"),
         yaxis=dict(title=None, tickfont=dict(size=10, color="#1f2937"), gridcolor="#f3f4f6"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        height=280
+        height=260,
+        annotations=anotaciones_pines
     )
 
     # --- TABLA DE HISTORIAL DETALLADO ---
@@ -155,17 +212,16 @@ def analizar_instancia_mujeres(df):
         estilos_animacion,
         tarjetas_kpi,
         
-        # Bloque de Visualizaciones con el Panel Horizontal de Líneas de Acción
         dbc.Row([
             dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-collection-fill me-2"), "RESUMEN DE LÍNEAS DE ACCIÓN OPERATIVA"], 
+                html.Div([html.I(className="bi bi-list-check me-2"), "INDICADORES DE PROGRESO POR LÍNEA DE ACCIÓN"], 
                          style={'backgroundColor': '#115e59', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
                 html.Div([
-                    html.P("Desglose dinámico de indicadores por programa secundario.", 
+                    html.P("Desglose operativo y volumétrico por programa secundario.", 
                            className="text-center mb-3", 
                            style={"fontSize": "0.68rem", "color": "#1f2937", "fontWeight": "500"}),
-                    panel_horizontal
-                ], className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px", "display": "flex", "flexDirection": "column", "justifyContent": "center"})
+                    panel_progreso_limpio
+                ], className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px"})
             ], className="shadow-sm mb-4 animar-entrada"), md=6),
             
             dbc.Col(html.Div([
@@ -180,7 +236,6 @@ def analizar_instancia_mujeres(df):
             ], className="shadow-sm mb-4 animar-entrada"), md=6),
         ]),
 
-        # Bloque de la Tabla Histórica
         dbc.Row([
             dbc.Col(html.Div([
                 html.Div([

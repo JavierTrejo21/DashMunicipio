@@ -7,12 +7,19 @@ from dash import html
 # 1. IMPORTACIÓN DE LOS MÓDULOS INDEPENDIENTES POR ÁREA
 # -----------------------------------------------------------------
 from areas.atencion_ciudadana import analizar_atencion_ciudadana
+from areas.apoyos_economicos import analizar_apoyos_economicos
 from areas.bibliotecas import analizar_bibliotecas
 from areas.catastro import analizar_catastro
 from areas.desarrollo_social import analizar_desarrollo_social
+from areas.adultos_mayores import analizar_adultos_mayores
+from areas.programa_1000_dias import analizar_programa_1000_dias
+from areas.dif_juridico import analizar_dif_juridico
 from areas.dif_psicologia import analizar_dif_psicologia
 from areas.ecologia import analizar_ecologia
 from areas.grupos_vulnerables import analizar_grupos_vulnerables
+from areas.estado_familiar import analizar_estado_familiar
+from areas.conciliacion_municipal import analizar_conciliacion_municipal
+from areas.seguridad_publica import analizar_seguridad_publica
 from areas.licencias_reglamentos import analizar_licencias_reglamentos
 from areas.mujeres import analizar_instancia_mujeres
 from areas.obras_publicas import analizar_obras_publicas
@@ -134,6 +141,22 @@ MAPEO_ANALISIS = {
     "4.1 ECOLOGÍA Y MEDIO AMBIENTE.xlsx - Hoja1.csv": analizar_ecologia,
     "4.1 ECOLOGÍA Y MEDIO AMBIENTE.xlsx - Hoja1": analizar_ecologia,
     "4.1 ECOLOGÍA Y MEDIO AMBIENTE": analizar_ecologia,
+    "4_1_ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
+    "ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
+    "ecologia": analizar_ecologia,
+    # --- ÁREA: 2.1.2 DIF APOYOS ECONÓMICOS ---
+    "2_1_2_DIF_APOYOS_ECONOMICOS": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONOMICOS": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONÓMICOS": analizar_apoyos_economicos,
+    "DIF_APOYOS_ECONOMICOS": analizar_apoyos_economicos,
+    "APOYOS_ECONOMICOS": analizar_apoyos_economicos,
+    "apoyos_economicos": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONOMICOS.xlsx": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONÓMICOS.xlsx": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONOMICOS.xlsx - Hoja1": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONÓMICOS.xlsx - Hoja1": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONOMICOS.xlsx - Hoja1.csv": analizar_apoyos_economicos,
+    "2.1.2 DIF APOYOS ECONOMICOS.xlsx - Hoja1.csv": analizar_apoyos_economicos,
     # --- ÁREA: 5.1.2 PUEBLOS INDÍGENAS ---
     "5.1.2 PUEBLOS INDIGENAS": analizar_pueblos_indigenas,
     "5_1_2_PUEBLOS_INDIGENAS": analizar_pueblos_indigenas,
@@ -147,6 +170,74 @@ MAPEO_ANALISIS = {
         "5_1_2_PUEBLOS_INDIGENAS_XLSX___BASE_DE_DATOS_NUEVA_LENGUAS_IND"
     ): analizar_pueblos_indigenas,
     "BASE_DE_DATOS_NUEVA_LENGUAS_IND": analizar_pueblos_indigenas,
+    # --- ÁREA: 2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES ---
+    "2_1_3_DIF_APOYOS_ATENCION_A_ADULTOS_MAYORES": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCION A ADULTOS MAYORES": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES": analizar_adultos_mayores,
+    "ADULTOS_MAYORES": analizar_adultos_mayores,
+    "adultos_mayores": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCION A ADULTOS MAYORES.xlsx": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES.xlsx": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCION A ADULTOS MAYORES.xlsx - Hoja1": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES.xlsx - Hoja1": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCION A ADULTOS MAYORES.xlsx - Hoja1.csv": analizar_adultos_mayores,
+    "2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES.xlsx - Hoja1.csv": analizar_adultos_mayores,
+    # --- ÁREA: 2.1.6 DIF PROGRAMA 1000 DÍAS ---
+    "2_1_6_DIF_PROGRAMA_1000_DIAS": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DIAS": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DÍAS": analizar_programa_1000_dias,
+    "PROGRAMA_1000_DIAS": analizar_programa_1000_dias,
+    "programa_1000_dias": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DIAS.xlsx": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DÍAS.xlsx": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DIAS.xlsx - Hoja1": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DÍAS.xlsx - Hoja1": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DIAS.xlsx - Hoja1.csv": analizar_programa_1000_dias,
+    "2.1.6 DIF PROGRAMA 1000 DÍAS.xlsx - Hoja1.csv": analizar_programa_1000_dias,
+    # --- ÁREA: 2.2.5 DIF JURÍDICO ---
+    "2_2_5_DIF_JURIDICO": analizar_dif_juridico,
+    "2.2.5 DIF JURIDICO": analizar_dif_juridico,
+    "2.2.5 DIF JURÍDICO": analizar_dif_juridico,
+    "DIF_JURIDICO": analizar_dif_juridico,
+    "dif_juridico": analizar_dif_juridico,
+    "2.2.5 DIF JURIDICO.xlsx": analizar_dif_juridico,
+    "2.2.5 DIF JURÍDICO.xlsx": analizar_dif_juridico,
+    "2.2.5 DIF JURIDICO.xlsx - Hoja1": analizar_dif_juridico,
+    "2.2.5 DIF JURÍDICO.xlsx - Hoja1": analizar_dif_juridico,
+    "2.2.5 DIF JURIDICO.xlsx - Hoja1.csv": analizar_dif_juridico,
+    "2.2.5 DIF JURÍDICO.xlsx - Hoja1.csv": analizar_dif_juridico,
+    # --- ÁREA: 1.7 REGISTRO DEL ESTADO FAMILIAR ---
+    "1_7_REGISTRO_DEL_ESTADO_FAMILIAR": analizar_estado_familiar,
+    "1.7 REGISTRO DEL ESTADO FAMILIAR": analizar_estado_familiar,
+    "REGISTRO_DEL_ESTADO_FAMILIAR": analizar_estado_familiar,
+    "estado_familiar": analizar_estado_familiar,
+    "1.7 REGISTRO DEL ESTADO FAMILIAR.xlsx": analizar_estado_familiar,
+    "1.7 REGISTRO DEL ESTADO FAMILIAR.xlsx - Hoja1": analizar_estado_familiar,
+    "1.7 REGISTRO DEL ESTADO FAMILIAR.xlsx - Hoja1.csv": analizar_estado_familiar,
+    # --- ÁREA: 1.2 CONCILIACIÓN MUNICIPAL ---
+    "1_2_CONCILIACION_MUNICIPAL": analizar_conciliacion_municipal,
+    "1.2 CONCILIACION MUNICIPAL": analizar_conciliacion_municipal,
+    "1.2 CONCILIACIÓN MUNICIPAL": analizar_conciliacion_municipal,
+    "CONCILIACION_MUNICIPAL": analizar_conciliacion_municipal,
+    "conciliacion_municipal": analizar_conciliacion_municipal,
+    "1.2 CONCILIACION MUNICIPAL.xlsx": analizar_conciliacion_municipal,
+    "1.2 CONCILIACIÓN MUNICIPAL.xlsx": analizar_conciliacion_municipal,
+    "1.2 CONCILIACION MUNICIPAL.xlsx - Hoja1": analizar_conciliacion_municipal,
+    "1.2 CONCILIACIÓN MUNICIPAL.xlsx - Hoja1": analizar_conciliacion_municipal,
+    "1.2 CONCILIACION MUNICIPAL.xlsx - Hoja1.csv": analizar_conciliacion_municipal,
+    "1.2 CONCILIACIÓN MUNICIPAL.xlsx - Hoja1.csv": analizar_conciliacion_municipal, 
+    # --- ÁREA: 1.1 SEGURIDAD PÚBLICA ---
+    "1_1_SEGURIDAD_PUBLICA": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PUBLICA": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PÚBLICA": analizar_seguridad_publica,
+    "SEGURIDAD_PUBLICA": analizar_seguridad_publica,
+    "seguridad_publica": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PUBLICA.xlsx": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PÚBLICA.xlsx": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PUBLICA.xlsx - Hoja1": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PÚBLICA.xlsx - Hoja1": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PUBLICA.xlsx - Hoja1.csv": analizar_seguridad_publica,
+    "1.1 SEGURIDAD PÚBLICA.xlsx - Hoja1.csv": analizar_seguridad_publica,
     # --- ÁREA: 5.1 DESARROLLO SOCIAL ---
     "5.1 DESARROLLO SOCIAL": analizar_desarrollo_social,
     "5_1_DESARROLLO_SOCIAL": analizar_desarrollo_social,
