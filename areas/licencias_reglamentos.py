@@ -4,10 +4,20 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
+# Paleta institucional unificada Matriz
+VERDE_INST = "#115e59"      # Verde petróleo principal 
+VERDE_CLARO = "#14b8a6"
+GUINDA_INST = "#691c32"     # Guinda institucional
+DORADO_INST = "#bc955c"     # Dorado institucional
+TEXTO_DARK = "#1f2937"
+TEXTO_SECUNDARIO = "#374151"  # <-- Color oscuro optimizado para alta visibilidad
+GRIS_BORDES = "#e5e7eb"
+
 def analizar_licencias_reglamentos(df):
     """
     Módulo operativo para Licencias y Reglamentos.
-    Analiza trámites comerciales, uso de infraestructura y recaudación económica.
+    Analiza trámites comerciales, uso de infraestructura y recaudación económica
+    bajo la identidad institucional unificada y con contraste de texto optimizado.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El DataFrame de Licencias y Reglamentos llegó vacío al módulo operativo.", color="warning", className="m-3")
@@ -64,54 +74,40 @@ def analizar_licencias_reglamentos(df):
         total_piso = df_piso[col_cantidad_sistema].sum() if not df_piso.empty else 0
 
         # =================================================================
-        # 4. DISEÑO DE TARJETAS DE RESUMEN
+        # 4. DISEÑO DE TARJETAS SUPERIORES (Con texto de alto contraste)
         # =================================================================
-        estilo_tarjeta = {
-            "borderRadius": "6px",
-            "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
-            "border": "1px solid #eef2f5",
-            "backgroundColor": "#ffffff",
-            "padding": "10px 14px",
-            "height": "100%"
-        }
-
-        tarjetas_variables = html.Div([
-            html.Div("CUADRO DE MANDO - LICENCIAS Y REGLAMENTOS", 
-                     style={"fontSize": "11px", "fontWeight": "700", "color": "#691c32", "marginBottom": "10px", "letterSpacing": "0.8px"}),
+        kpis_row = dbc.Row([
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("GESTIONES TOTALES", className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                    html.H4(f"{total_tramites:,.0f} actos", style={"color": VERDE_INST, "fontWeight": "bold", "fontSize": "1.1rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {VERDE_INST}"}), width=12, md=3),
             
-            dbc.Row([
-                # Card 1: Total Trámites
-                dbc.Col(html.Div([
-                    html.Div("📋 GESTIONES TOTALES", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096", "textTransform": "uppercase"}),
-                    html.H4(f"{total_tramites:,.0f} actos", style={"margin": "2px 0", "fontWeight": "700", "color": "#2b6cb0", "fontSize": "18px"}),
-                    html.Div("Trámites comerciales y permisos", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, lg=3, md=6, className="mb-2"),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("RECAUDACIÓN TOTAL", className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                    html.H4(f"${total_recaudado:,.2f}", style={"color": VERDE_CLARO, "fontWeight": "bold", "fontSize": "1.1rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {VERDE_CLARO}"}), width=12, md=3),
 
-                # Card 2: Ingresos Totales
-                dbc.Col(html.Div([
-                    html.Div("💰 RECAUDACIÓN TOTAL", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096", "textTransform": "uppercase"}),
-                    html.H4(f"${total_recaudado:,.2f}", style={"margin": "2px 0", "fontWeight": "700", "color": "#2f855a", "fontSize": "18px"}),
-                    html.Div("Ingresos acumulados captados", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, lg=3, md=6, className="mb-2"),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("COBROS DE PISO", className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                    html.H4(f"{total_piso:,.0f} cobros", style={"color": DORADO_INST, "fontWeight": "bold", "fontSize": "1.1rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {DORADO_INST}"}), width=12, md=3),
 
-                # Card 3: Cobros de piso
-                dbc.Col(html.Div([
-                    html.Div("🎪 COBROS DE PISO", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096", "textTransform": "uppercase"}),
-                    html.H4(f"{total_piso:,.0f} cobros", style={"margin": "2px 0", "fontWeight": "700", "color": "#b7791f", "fontSize": "18px"}),
-                    html.Div("Regulación de comercio semifijo", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, lg=3, md=6, className="mb-2"),
-
-                # Card 4: Infraestructura
-                dbc.Col(html.Div([
-                    html.Div("🏛️ INFRAESTRUCTURA MUNICIPAL", style={"fontSize": "9px", "fontWeight": "700", "color": "#4a5568", "textTransform": "uppercase"}),
-                    html.H4(f"{total_infra:,.0f} permisos", style={"margin": "2px 0", "fontWeight": "700", "color": "#4a5568", "fontSize": "18px"}),
-                    html.Div("Uso de canchas y espacios", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, lg=3, md=6, className="mb-2"),
-            ], className="g-2")
-        ])
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("INFRAESTRUCTURA", className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                    html.H4(f"{total_infra:,.0f} permisos", style={"color": TEXTO_DARK, "fontWeight": "bold", "fontSize": "1.1rem"})
+                ])
+            ], className="border-0 shadow-sm mb-3 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {TEXTO_DARK}"}), width=12, md=3),
+        ], className="mb-2")
 
         # =================================================================
-        # 5. CONFIGURACIÓN DE GRÁFICAS (Tendencia Financiera e Ingresos por Giro)
+        # 5. CONFIGURACIÓN DE GRÁFICAS (Con etiquetas oscuras y legibles)
         # =================================================================
         orden_meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         
@@ -126,10 +122,15 @@ def analizar_licencias_reglamentos(df):
         if not df_mes.empty and df_mes[col_inversion].sum() > 0:
             fig_mensual = px.line(
                 df_mes, x=col_mes, y=col_inversion, markers=True,
-                color_discrete_sequence=["#2f855a"], # Verde Financiero
+                color_discrete_sequence=[VERDE_INST],
                 labels={col_inversion: "Ingresos ($)", col_mes: ""}
             )
-            fig_mensual.update_layout(margin=dict(l=50, r=15, t=15, b=15), plot_bgcolor="white", height=260, yaxis={'gridcolor': '#f0f0f0', 'tickprefix': '$'})
+            fig_mensual.update_layout(
+                title=dict(text="<b>COMPORTAMIENTO MENSUAL DE INGRESOS (TESORERÍA)</b>", font=dict(size=11, color=TEXTO_DARK)),
+                margin=dict(l=50, r=15, t=35, b=15), plot_bgcolor="white", paper_bgcolor="white", height=260, 
+                yaxis={'gridcolor': '#f0f0f0', 'tickprefix': '$', 'tickfont': dict(color=TEXTO_SECUNDARIO)},
+                xaxis={'tickfont': dict(color=TEXTO_SECUNDARIO)}
+            )
             graph_left = dcc.Graph(figure=fig_mensual, config={'displayModeBar': False})
         else:
             graph_left = html.Div("ℹ️ No hay transacciones económicas registradas para graficar la tendencia mensual.", style={"padding": "40px 20px", "textAlign": "center", "color": "#a0aec0", "fontSize": "12px"})
@@ -138,7 +139,6 @@ def analizar_licencias_reglamentos(df):
         if col_actividad:
             df_act5 = df_lr.groupby(col_actividad)[col_inversion].sum().reset_index()
             df_act5 = df_act5[df_act5[col_inversion] > 0].sort_values(by=col_inversion, ascending=True).tail(5)
-            # Formatear el texto de las actividades a título para que luzca limpio
             df_act5[col_actividad] = df_act5[col_actividad].str.title()
         else:
             df_act5 = pd.DataFrame()
@@ -146,12 +146,16 @@ def analizar_licencias_reglamentos(df):
         if not df_act5.empty:
             fig_actividades = px.bar(
                 df_act5, x=col_inversion, y=col_actividad, orientation='h',
-                color_discrete_sequence=["#691c32"],
+                color_discrete_sequence=[GUINDA_INST],
                 labels={col_inversion: "Total Recaudado ($)", col_actividad: ""}
             )
-            fig_actividades.update_yaxes(tickvals=df_act5[col_actividad], tickfont=dict(size=9))
-            # Margen amplio de 200px para que entren completos términos como "Cobros De Piso" u otros permisos largos
-            fig_actividades.update_layout(margin=dict(l=200, r=15, t=15, b=15), plot_bgcolor="white", height=260, xaxis={'gridcolor': '#f0f0f0', 'tickprefix': '$'})
+            # Etiquetas del eje Y en tono oscuro intenso para máxima visibilidad
+            fig_actividades.update_yaxes(tickvals=df_act5[col_actividad], tickfont=dict(size=10, color=TEXTO_DARK, family="sans-serif"))
+            fig_actividades.update_layout(
+                title=dict(text="<b>PRINCIPALES GIROS COMERCIALES POR RECAUDACIÓN</b>", font=dict(size=11, color=TEXTO_DARK)),
+                margin=dict(l=170, r=15, t=35, b=15), plot_bgcolor="white", paper_bgcolor="white", height=260, 
+                xaxis={'gridcolor': '#f0f0f0', 'tickprefix': '$', 'tickfont': dict(color=TEXTO_SECUNDARIO)}
+            )
             graph_right = dcc.Graph(figure=fig_actividades, config={'displayModeBar': False})
         else:
             graph_right = html.Div("ℹ️ No hay ingresos monetarios suficientes para desglosar el Top de Actividades.", style={"padding": "40px 20px", "textAlign": "center", "color": "#a0aec0", "fontSize": "12px"})
@@ -160,21 +164,19 @@ def analizar_licencias_reglamentos(df):
         # 6. LAYOUT CONSOLIDADO FINAL
         # =================================================================
         return html.Div([
-            tarjetas_variables,  
+            kpis_row,  
             html.Hr(style={"margin": "15px 0", "opacity": "0.1"}),
             
             dbc.Row([
                 # Panel Izquierdo: Flujo Financiero Mensual
                 dbc.Col(html.Div([
-                    html.Div("📈 COMPORTAMIENTO MENSUAL DE INGRESOS (TESORERÍA)", style={"padding": "8px 12px", "fontWeight": "bold", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "fontSize": "11px", "color": "#4a5568"}),
                     graph_left
-                ], className="bg-white border shadow-sm", style={"borderRadius": "6px"}), md=6, className="mb-2"),
+                ], className="bg-white border shadow-sm p-2", style={"borderRadius": "14px"}), md=6, className="mb-2"),
 
                 # Panel Derecho: Rendimiento por Actividad
                 dbc.Col(html.Div([
-                    html.Div("🎯 PRINCIPALES GIROS COMERCIALES POR RECAUDACIÓN", style={"padding": "8px 12px", "fontWeight": "bold", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "fontSize": "11px", "color": "#4a5568"}),
                     graph_right
-                ], className="bg-white border shadow-sm", style={"borderRadius": "6px"}), md=6, className="mb-2")
+                ], className="bg-white border shadow-sm p-2", style={"borderRadius": "14px"}), md=6, className="mb-2")
             ])
         ], style={"padding": "5px"})
 

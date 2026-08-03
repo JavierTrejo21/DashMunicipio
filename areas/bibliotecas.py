@@ -4,12 +4,21 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
+# Paleta institucional unificada
+VERDE_INST = "#115e59"      # Verde petróleo principal 
+VERDE_CLARO = "#14b8a6"
+GUINDA_INST = "#691c32"     # Guinda institucional
+DORADO_INST = "#bc955c"     # Dorado institucional
+TEXTO_DARK = "#1f2937"
+TEXTO_SECUNDARIO = "#374151"  # Color oscuro optimizado para alta visibilidad
+GRIS_BORDES = "#e5e7eb"
+
 def analizar_bibliotecas(df):
     """
     Módulo operativo optimizado para Bibliotecas y C.C.A.
     - Cuadrícula compacta de KPIs en 2x2.
-    - Tabla nativa HTML con 4 columnas completas (Alineación perfecta).
-    - Identidad oficial de Morena (Guinda #73243D y Grises neutros planos).
+    - Tabla nativa HTML con 4 columnas completas y texto de alta visibilidad.
+    - Identidad institucional unificada.
     - Gráfica lineal comparativa mensual de asistencia abajo.
     """
     if df is None or df.empty:
@@ -63,52 +72,39 @@ def analizar_bibliotecas(df):
         if len(top_programa) > 35: top_programa = top_programa[:32] + "..."
 
         # =================================================================
-        # 4. DISEÑO DE TARJETAS EN CUADRÍCULA 2x2
+        # 4. DISEÑO DE TARJETAS EN CUADRÍCULA 2x2 (Estilo Unificado)
         # =================================================================
-        estilo_tarjeta = {
-            "borderRadius": "6px",
-            "boxShadow": "0 1px 3px rgba(0,0,0,0.04)",
-            "border": "1px solid #eef2f5",
-            "backgroundColor": "#ffffff",
-            "padding": "12px 16px",
-            "height": "100%"
-        }
+        kpr_cards_data = [
+            ("MATRÍCULA TOTAL ACTIVA", f"{total_alumnos_unicos:,.0f} niños(as)", VERDE_INST),
+            ("PROGRAMA CON MAYOR MATRÍCULA", top_programa, DORADO_INST),
+            ("NIÑAS REGISTRADAS (ÚNICAS)", f"{total_ninas_activos:,.0f} alumnas", GUINDA_INST),
+            ("NIÑOS REGISTRADOS (ÚNICAS)", f"{total_ninos_activos:,.0f} alumnos", TEXTO_DARK)
+        ]
 
         cuadrícula_kpis = html.Div([
-            html.Div("CUADRO DE MANDO - ALUMNOS MATRICULADOS EN BIBLIOTECAS Y C.C.A.", 
-                     style={"fontSize": "11px", "fontWeight": "700", "color": "#73243D", "marginBottom": "12px", "letterSpacing": "0.8px"}),
-            
             dbc.Row([
-                dbc.Col(html.Div([
-                    html.Div("👥 MATRÍCULA TOTAL ACTIVA", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                    html.H4(f"{total_alumnos_unicos:,.0f} niños(as)", style={"margin": "2px 0", "fontWeight": "700", "color": "#2b6cb0", "fontSize": "18px"}),
-                    html.Div("Capacidad real (sin duplicidad)", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, md=6, className="mb-2"),
-
-                dbc.Col(html.Div([
-                    html.Div("🌟 PROGRAMA CON MAYOR MATRÍCULA", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                    html.H4(top_programa, style={"margin": "2px 0", "fontWeight": "700", "color": "#4a5568", "fontSize": "13px", "lineHeight": "22px"}),
-                    html.Div("Grupo fijo más numeroso del año", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, md=6, className="mb-2"),
+                dbc.Col(dbc.Card([
+                    dbc.CardBody([
+                        html.H6(title, className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                        html.H4(val, style={"color": color, "fontWeight": "bold", "fontSize": "1.1rem", "margin": "2px 0"})
+                    ])
+                ], className="border-0 shadow-sm mb-2 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {color}"}), width=12, md=6)
+                for title, val, color in kpr_cards_data[:2]
             ], className="g-2"),
 
             dbc.Row([
-                dbc.Col(html.Div([
-                    html.Div("👧 NIÑAS REGISTRADAS (ÚNICAS)", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                    html.H4(f"{total_ninas_activos:,.0f} alumnas", style={"margin": "2px 0", "fontWeight": "700", "color": "#b83280", "fontSize": "18px"}),
-                    html.Div("Comunidad infantil femenina", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, md=6, className="mb-2"),
-
-                dbc.Col(html.Div([
-                    html.Div("👦 NIÑOS REGISTRADOS (ÚNICAS)", style={"fontSize": "9px", "fontWeight": "700", "color": "#718096"}),
-                    html.H4(f"{total_ninos_activos:,.0f} alumnos", style={"margin": "2px 0", "fontWeight": "700", "color": "#319795", "fontSize": "18px"}),
-                    html.Div("Comunidad infantil masculina", style={"fontSize": "9px", "color": "#a0aec0"})
-                ], style=estilo_tarjeta), width=12, md=6, className="mb-2"),
+                dbc.Col(dbc.Card([
+                    dbc.CardBody([
+                        html.H6(title, className="mb-1", style={"fontSize": "0.7rem", "fontWeight": "700", "color": TEXTO_SECUNDARIO}),
+                        html.H4(val, style={"color": color, "fontWeight": "bold", "fontSize": "1.1rem", "margin": "2px 0"})
+                    ])
+                ], className="border-0 shadow-sm mb-2 position-relative", style={"borderRadius": "12px", "borderLeft": f"4px solid {color}"}), width=12, md=6)
+                for title, val, color in kpr_cards_data[2:]
             ], className="g-2")
         ])
 
         # =================================================================
-        # 5. CONSTRUCCIÓN DE LA TABLA (AHORA SÍ CON SUS 4 COLUMNAS REALES)
+        # 5. CONSTRUCCIÓN DE LA TABLA (Con tono de letra oscuro y legible)
         # =================================================================
         if not df_matricula_real.empty:
             df_pivot = df_matricula_real.pivot(index=col_actividad, columns=col_variable, values=col_cantidad_sistema).fillna(0).reset_index()
@@ -122,35 +118,28 @@ def analizar_bibliotecas(df):
             filas_tabla = []
             for _, r in df_pivot.iterrows():
                 filas_tabla.append(html.Tr([
-                    # Columna 1: Taller
-                    html.Td(r[col_actividad], style={"fontSize": "11px", "color": "#2d3748", "textAlign": "left", "padding": "8px 14px", "fontWeight": "500", "backgroundColor": "#f9f9f9", "border": "1px solid #cbd5e0"}),
-                    # Columna 2: Niñas
-                    html.Td(f"{r['Niñas']:,.0f}", style={"fontSize": "11px", "color": "#2d3748", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": "1px solid #cbd5e0"}),
-                    # Columna 3: Niños
-                    html.Td(f"{r['Niños']:,.0f}", style={"fontSize": "11px", "color": "#2d3748", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": "1px solid #cbd5e0"}),
-                    # Columna 4: Total Inscritos (¡AGREGADA PARA EVITAR EL CORTE VISUAL!)
-                    html.Td(f"{r['TOTAL ACTIVO']:,.0f}", style={"fontSize": "11px", "color": "#1a202c", "fontWeight": "700", "padding": "8px 14px", "backgroundColor": "#f1f1f1", "textAlign": "center", "border": "1px solid #cbd5e0"}),
+                    html.Td(r[col_actividad], style={"fontSize": "11px", "color": TEXTO_DARK, "textAlign": "left", "padding": "8px 14px", "fontWeight": "500", "backgroundColor": "#ffffff", "border": f"1px solid {GRIS_BORDES}"}),
+                    html.Td(f"{r['Niñas']:,.0f}", style={"fontSize": "11px", "color": TEXTO_DARK, "fontWeight": "600", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
+                    html.Td(f"{r['Niños']:,.0f}", style={"fontSize": "11px", "color": TEXTO_DARK, "fontWeight": "600", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
+                    html.Td(f"{r['TOTAL ACTIVO']:,.0f}", style={"fontSize": "11px", "color": TEXTO_DARK, "fontWeight": "700", "padding": "8px 14px", "backgroundColor": "#f9fafb", "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
                 ]))
 
-            # Fila de Totales Generales (4 Columnas Exactas alineadas con el Header)
+            # Fila de Totales Generales
             filas_tabla.append(html.Tr([
-                html.Td("TOTAL MATRÍCULA MUNICIPAL", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "backgroundColor": "#73243D", "border": "1px solid #cbd5e0"}),
-                html.Td(f"{total_ninas_activos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": "#73243D", "textAlign": "center", "border": "1px solid #cbd5e0"}),
-                html.Td(f"{total_ninos_activos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": "#73243D", "textAlign": "center", "border": "1px solid #cbd5e0"}),
-                html.Td(f"{total_alumnos_unicos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": "#561B2E", "textAlign": "center", "border": "1px solid #cbd5e0"}),
+                html.Td("TOTAL MATRÍCULA MUNICIPAL", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "backgroundColor": VERDE_INST, "border": f"1px solid {GRIS_BORDES}"}),
+                html.Td(f"{total_ninas_activos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": VERDE_INST, "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
+                html.Td(f"{total_ninos_activos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": VERDE_INST, "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
+                html.Td(f"{total_alumnos_unicos:,.0f}", style={"fontSize": "11px", "fontWeight": "700", "color": "#ffffff", "backgroundColor": GUINDA_INST, "textAlign": "center", "border": f"1px solid {GRIS_BORDES}"}),
             ]))
 
             tabla_layout = html.Div([
-                html.Div("📋 DESGLOSE DE MATRÍCULA INSTITUCIONAL POR TALLER OPERATIVO", 
-                         style={"padding": "9px 12px", "fontWeight": "bold", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #cbd5e0", "fontSize": "11px", "color": "#4a5568"}),
                 html.Div(
                     html.Table([
-                        # Encabezado Principal: 4 columnas
                         html.Thead(html.Tr([
-                            html.Th("Taller / Actividad Educativa", style={"fontSize": "10px", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": "#73243D", "border": "1px solid #cbd5e0"}),
-                            html.Th("👧 Niñas", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": "#73243D", "border": "1px solid #cbd5e0", "textAlign": "center"}),
-                            html.Th("👦 Niños", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": "#73243D", "border": "1px solid #cbd5e0", "textAlign": "center"}),
-                            html.Th("Total Inscritos", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": "#561B2E", "border": "1px solid #cbd5e0", "textAlign": "center"}),
+                            html.Th("Taller / Actividad Educativa", style={"fontSize": "10px", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": VERDE_INST, "border": f"1px solid {GRIS_BORDES}"}),
+                            html.Th("👧 Niñas", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": VERDE_INST, "border": f"1px solid {GRIS_BORDES}", "textAlign": "center"}),
+                            html.Th("👦 Niños", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": VERDE_INST, "border": f"1px solid {GRIS_BORDES}", "textAlign": "center"}),
+                            html.Th("Total Inscritos", style={"fontSize": "10px", "color": "#ffffff", "padding": "10px 14px", "fontWeight": "600", "backgroundColor": GUINDA_INST, "border": f"1px solid {GRIS_BORDES}", "textAlign": "center"}),
                         ])),
                         html.Tbody(filas_tabla)
                     ], 
@@ -158,7 +147,7 @@ def analizar_bibliotecas(df):
                     ),
                     style={"padding": "0px"}
                 )
-            ], style={"border": "1px solid #cbd5e0", "borderRadius": "6px", "marginTop": "16px", "backgroundColor": "#ffffff", "overflow": "hidden"})
+            ], style={"border": f"1px solid {GRIS_BORDES}", "borderRadius": "14px", "marginTop": "16px", "backgroundColor": "#ffffff", "overflow": "hidden"})
         else:
             tabla_layout = html.Div()
 
@@ -175,21 +164,22 @@ def analizar_bibliotecas(df):
         if not df_lineas.empty and df_lineas[col_cantidad_sistema].sum() > 0:
             fig_comparativa = px.line(
                 df_lineas, x=col_mes, y=col_cantidad_sistema, color=col_variable, markers=True,
-                color_discrete_map={"Niñas": "#b83280", "Niños": "#319795"},
+                color_discrete_map={"Niñas": GUINDA_INST, "Niños": VERDE_INST},
                 labels={col_cantidad_sistema: "Asistencias", col_mes: "", col_variable: "Segmento"}
             )
             fig_comparativa.update_layout(
-                margin=dict(l=40, r=15, t=15, b=15),
+                title=dict(text="<b>COMPORTAMIENTO HISTÓRICO MENSUAL DE ASISTENCIA (FLUJO DE OPERACIÓN)</b>", font=dict(size=11, color=TEXTO_DARK)),
+                margin=dict(l=40, r=15, t=35, b=15),
                 plot_bgcolor="white",
-                height=240,
-                yaxis={'gridcolor': '#f0f0f0'},
+                paper_bgcolor="white",
+                height=260,
+                yaxis={'gridcolor': '#f0f0f0', 'tickfont': dict(color=TEXTO_SECUNDARIO)},
+                xaxis={'tickfont': dict(color=TEXTO_SECUNDARIO)},
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             seccion_grafica = html.Div([
-                html.Div("📈 COMPORTAMIENTO HISTÓRICO MENSUAL DE ASISTENCIA (FLUJO DE OPERACIÓN)", 
-                         style={"padding": "8px 12px", "fontWeight": "bold", "backgroundColor": "#f8f9fa", "borderBottom": "1px solid #dee2e6", "fontSize": "11px", "color": "#4a5568"}),
                 dcc.Graph(figure=fig_comparativa, config={'displayModeBar': False})
-            ], className="bg-white border shadow-sm mt-3", style={"borderRadius": "6px"})
+            ], className="bg-white border shadow-sm mt-3 p-2", style={"borderRadius": "14px"})
         else:
             seccion_grafica = html.Div("ℹ️ No hay registros suficientes para estructurar el histórico.", style={"padding": "20px", "color": "#a0aec0", "fontSize": "12px"})
 
@@ -199,7 +189,7 @@ def analizar_bibliotecas(df):
         return html.Div([
             cuadrícula_kpis,   # Bloque superior 2x2
             tabla_layout,      # Tabla analítica simétrica de 4 columnas
-            seccion_grafica    # Gráfica lineal histórica de control abajo
+            seccion_grafica    # Gráfica lineal histórica abajo
         ], style={"padding": "5px"})
 
     except Exception as e:
