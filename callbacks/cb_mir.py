@@ -6,6 +6,7 @@ RUTA_CSV_MIR = r"C:\DashMunicipio\DES01_CHU_02_2026.xlsx"
 
 
 def register_mir_callbacks(app):
+    """Registra todos los callbacks relacionados con la Matriz de Indicadores (MIR)"""
 
     # ==========================================
     # 1. TOGGLE DE LA MATRIZ MIR GENERAL
@@ -46,23 +47,19 @@ def register_mir_callbacks(app):
             return html.Div()
 
         try:
-            # 🔍 PASO DE DIAGNÓSTICO: Buscamos cualquier texto dentro del contenido activo para no fallar
-            nombre_area = "RECEPCIÓN" # Forzamos una búsqueda inicial de prueba si falla la extracción automatizada
+            nombre_area = "RECEPCIÓN"
             
             if isinstance(contenido_activo, dict):
                 props = contenido_activo.get("props", {})
                 children = props.get("children", [])
-                # Intentamos extraer de manera flexible
                 str_contenido = str(children)
                 if "PRESIDENCIA" in str_contenido.upper():
                     nombre_area = "PRESIDENCIA"
                 elif "MUNICIPAL" in str_contenido.upper():
                     nombre_area = "MUNICIPAL"
 
-            # Llamamos directamente a la función de la MIR
             resultado = generar_tabla_resumen_area(RUTA_CSV_MIR, nombre_area)
 
-            # Retornamos de manera directa y forzada con el nuevo diseño institucional para verificar que se pinte en pantalla
             return html.Div(
                 [
                     html.Div(
@@ -85,5 +82,4 @@ def register_mir_callbacks(app):
                 ]
             )
         except Exception as e:
-            # Si algo falla, te mostrará el error exacto en pantalla en lugar de quedarse en blanco
             return html.Div(f"⚠️ Error controlado en callback MIR: {e}", className="alert alert-danger")
