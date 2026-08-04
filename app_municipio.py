@@ -37,6 +37,9 @@ app = dash.Dash(
     include_assets_files=True,       # Carga automática de los archivos CSS locales
     suppress_callback_exceptions=True
 )
+
+server = app.server # Se agrego para que funcione en el despliegue de Render
+
 app.title = "Sistema de Gestión Municipal PbR - PMD"
 
 # 3. Construir el Layout Principal unificado y limpio (Eliminando el header duplicado)
@@ -50,3 +53,4 @@ register_admin_callbacks(app)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
