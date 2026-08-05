@@ -1,3 +1,4 @@
+# [source: 2]
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
@@ -114,14 +115,147 @@ def servir_layout():
                 )
             ], className="mb-3"),
 
-            # --- SECCIÓN DE ACUERDOS (EJES ESTRATÉGICOS) ---
+            # --- SECCIÓN DE ACUERDOS (EJES ESTRATÉGICOS) ACTUALIZADA ---
             html.Div([
                 html.H5(
                     "📂 EJES ESTRATÉGICOS (PMD)",
                     className="text-muted mb-3 fw-bold",
                     style={"font-size": "0.82rem", "letter-spacing": "0.5px"}
                 ),
-                dbc.Row(id="contenedor-tarjetas-acuerdos", className="mb-4 g-3"),
+                dbc.Row(id="contenedor-tarjetas-acuerdos", className="mb-4 g-3", children=[
+                    # Tarjeta 1: Gobierno Participativo y Transformador
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-diagram-3-fill", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#df7385", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("GOBIERNO PARTICIPATIVO Y TRANSFORMADOR", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Propósitos y objetivos para la organización municipal.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "85%", "height": "5px", "backgroundColor": "#df7385", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("85%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#df7385"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 1}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                    # Tarjeta 2: Desarrollo Económico y Cultural
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-rocket-takeoff-fill", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#483d8b", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("DESARROLLO ECONÓMICO Y CULTURAL", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Desarrollo económico, fomento productivo y cultural.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "90%", "height": "5px", "backgroundColor": "#483d8b", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("90%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#483d8b"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 2}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                    # Tarjeta 3: Bienestar y Prosperidad
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-heart-pulse-fill", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#df7385", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("BIENESTAR Y PROSPERIDAD", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Bienestar social, salud e infraestructura comunitaria.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "70%", "height": "5px", "backgroundColor": "#df7385", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("70%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#df7385"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 3}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                    # Tarjeta 4: Desarrollo Sostenible e Infraestructura
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-lightbulb-fill", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#2a6f97", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("DESARROLLO SOSTENIBLE E INFRAESTRUCTURA", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Elementos de gestión territorial y obras públicas.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "60%", "height": "5px", "backgroundColor": "#2a6f97", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("60%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#2a6f97"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 4}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                    # Tarjeta 5: Igualdad y Derechos Humanos
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-people-fill", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#1f4e5b", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("IGUALDAD Y DERECHOS HUMANOS", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Elementos de inclusión y atención a grupos prioritarios.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "60%", "height": "5px", "backgroundColor": "#1f4e5b", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("60%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#1f4e5b"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 5}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                    # Tarjeta 6: Transparencia y Rendición de Cuentas
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-shield-check", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#38b000", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("TRANSPARENCIA Y RENDICIÓN DE CUENTAS", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Eficacia, fiscalización y apertura gubernamental.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "60%", "height": "5px", "backgroundColor": "#38b000", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("60%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#38b000"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 6}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        width=12, md=6, className="mb-3"
+                    ),
+                ]),
             ]),
 
             # --- SECCIÓN DE ÁREAS (Desplegable) ---
