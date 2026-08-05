@@ -7,8 +7,8 @@ from dash import html, dcc, dash_table
 # Colorimetría institucional unificada
 GUINDA_INST = "#691c32"
 DORADO_INST = "#bc955c"
+VERDE_OSCURO = "#0f4c3a"
 TEXTO_DARK = "#1f2937"
-TEXTO_SECUNDARIO = "#374151"
 
 def analizar_seguridad_publica(df):
     if df is None or df.empty:
@@ -18,61 +18,58 @@ def analizar_seguridad_publica(df):
     df_seg.columns = [str(c).strip().upper() for c in df_seg.columns]
     
     # Identificación segura de columnas
-    col_actividad = next((c for c in df_seg.columns if "ACTIVIDAD" in c or "CONCEPTO" in c), "ACTIVIDAD")
-    col_atendidos = next((c for c in df_seg.columns if "ATEND" in c or "TOTAL" in c or "CANTIDAD" in c), "ATENDIDOS")
-    col_mes = next((c for c in df_seg.columns if "MES" in c), "MES")
-    col_variable = next((c for c in df_seg.columns if "VAR" in c), "VARIABLE")
+    col_actividad = next((c for c in df_seg.columns if "ACTIVIDAD" in c or "CONCEPTO" in c), df_seg.columns[0])
+    col_atendidos = next((c for c in df_seg.columns if "ATEND" in c or "TOTAL" in c or "CANTIDAD" in c), df_seg.columns[1])
+    col_mes = next((c for c in df_seg.columns if "MES" in c), df_seg.columns[2])
+    col_variable = next((c for c in df_seg.columns if "VAR" in c), df_seg.columns[3])
 
-    # Limpieza numérica
-    df_seg[col_atendidos] = pd.to_numeric(df_seg[col_atendidos], errors='coerce').fillna(0)
+    # Limpieza numérica de atenciones
+    df_seg[col_atendidos] = pd.to_numeric(df_seg[col_atendidos].astype(str).str.replace(r"[^\d.]", "", regex=True), errors='coerce').fillna(0)
 
-    # Métricas clave para las tarjetas KPI
-    total_acciones = df_seg[col_atendidos].sum()
-    recorridos_prevencion = df_seg[df_seg[col_actividad].str.upper().str.contains("RECORRIDOS", na=False)][col_atendidos].sum()
-    reportes_ciudadanos = df_seg[df_seg[col_actividad].str.upper().str.contains("REPORTES", na=False)][col_atendidos].sum()
-    puesta_disposicion = df_seg[df_seg[col_actividad].str.upper().str.contains("DISPOSICION", na=False)][col_atendidos].sum()
+    # Tarjetas KPI basadas exactamente en las actividades del Excel
+    accidentes = df_seg[df_seg[col_actividad].str.upper().str.contains("ACCIDENTES DE TRANSITO", na=False)][col_atendidos].sum()
+    reportes = df_seg[df_seg[col_actividad].str.upper().str.contains("REPORTES CIUDADANOS", na=False)][col_atendidos].sum()
+    catastrofes = df_seg[df_seg[col_actividad].str.upper().str.contains("CATASTROFES", na=False)][col_atendidos].sum()
+    
+    # Suma de ambas puestas a disposición para una tarjeta resumen general limpia
+    puestas_disposicion = df_seg[df_seg[col_actividad].str.upper().str.contains("PUESTAS A DISPOSICIÓN", na=False)][col_atendidos].sum()
 
     estilo_kpi = {
-        "borderRadius": "8px", 
-        "transition": "all 0.25s ease-in-out"
+        "backgroundColor": "white",
+        "border": "1px solid #e5e7eb",
+        "borderRadius": "8px",
+        "padding": "15px 20px",
+        "boxShadow": "0 1px 3px rgba(0,0,0,0.05)"
     }
 
     tarjetas_kpi = dbc.Row([
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": GUINDA_INST, "borderRadius": "8px 0 0 8px"}),
-                html.Small("TOTAL ACCIONES Y OPERATIVOS", className="font-weight-bold d-block", style={"fontSize": "0.68rem", "letterSpacing": "0.5px", "color": TEXTO_SECUNDARIO}),
-                html.H3(f"{total_acciones:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": TEXTO_DARK, "fontSize": "1.25rem"}),
-                html.Small("Registros operativos acumulados", className="d-block font-weight-bold", style={"fontSize": "0.58rem", "marginTop": "3px", "color": GUINDA_INST})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style=estilo_kpi), width=12, sm=6, md=3, className="mb-3"
+                html.Small("ACCIDENTES DE TRÁNSITO", className="d-block font-weight-bold text-muted", style={"fontSize": "0.7rem", "letterSpacing": "0.5px"}),
+                html.H3(f"{accidentes:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": GUINDA_INST, "fontSize": "1.25rem"})
+            ], style=estilo_kpi), md=3, className="mb-3"
         ),
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": DORADO_INST, "borderRadius": "8px 0 0 8px"}),
-                html.Small("RECORRIDOS DE PREVENCIÓN", className="font-weight-bold d-block", style={"fontSize": "0.68rem", "letterSpacing": "0.5px", "color": TEXTO_SECUNDARIO}),
-                html.H3(f"{recorridos_prevencion:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": GUINDA_INST, "fontSize": "1.25rem"}),
-                html.Small("Presencia policial constante", className="d-block font-weight-bold", style={"fontSize": "0.58rem", "marginTop": "3px", "color": DORADO_INST})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style=estilo_kpi), width=12, sm=6, md=3, className="mb-3"
+                html.Small("REPORTES CIUDADANOS", className="d-block font-weight-bold text-muted", style={"fontSize": "0.7rem", "letterSpacing": "0.5px"}),
+                html.H3(f"{reportes:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": GUINDA_INST, "fontSize": "1.25rem"})
+            ], style=estilo_kpi), md=3, className="mb-3"
         ),
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": GUINDA_INST, "borderRadius": "8px 0 0 8px"}),
-                html.Small("REPORTES CIUDADANOS ATENDIDOS", className="font-weight-bold d-block", style={"fontSize": "0.68rem", "letterSpacing": "0.5px", "color": TEXTO_SECUNDARIO}),
-                html.H3(f"{reportes_ciudadanos:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": TEXTO_DARK, "fontSize": "1.25rem"}),
-                html.Small("Atención oportuna a llamadas", className="d-block font-weight-bold", style={"fontSize": "0.58rem", "marginTop": "3px", "color": GUINDA_INST})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style=estilo_kpi), width=12, sm=6, md=3, className="mb-3"
+                html.Small("CATÁSTROFES ATENDIDAS", className="d-block font-weight-bold text-muted", style={"fontSize": "0.7rem", "letterSpacing": "0.5px"}),
+                html.H3(f"{catastrofes:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": GUINDA_INST, "fontSize": "1.25rem"})
+            ], style=estilo_kpi), md=3, className="mb-3"
         ),
         dbc.Col(
             html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": DORADO_INST, "borderRadius": "8px 0 0 8px"}),
-                html.Small("PUESTAS A DISPOSICIÓN", className="font-weight-bold d-block", style={"fontSize": "0.68rem", "letterSpacing": "0.5px", "color": TEXTO_SECUNDARIO}),
-                html.H3(f"{puesta_disposicion:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": GUINDA_INST, "fontSize": "1.25rem"}),
-                html.Small("Coordinación con instancias legales", className="d-block font-weight-bold", style={"fontSize": "0.58rem", "marginTop": "3px", "color": DORADO_INST})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style=estilo_kpi), width=12, sm=6, md=3, className="mb-3"
+                html.Small("PUESTAS A DISPOSICIÓN", className="d-block font-weight-bold text-muted", style={"fontSize": "0.7rem", "letterSpacing": "0.5px"}),
+                html.H3(f"{puestas_disposicion:,.0f}", className="m-0 font-weight-bold mt-1", style={"color": TEXTO_DARK, "fontSize": "1.25rem"})
+            ], style=estilo_kpi), md=3, className="mb-3"
         ),
-    ], className="mb-2")
+    ], className="mb-3")
 
-    # Agrupaciones para gráficos
+    # Gráficos principales
     df_actividad = df_seg.groupby(col_actividad, as_index=False)[col_atendidos].sum().sort_values(by=col_atendidos, ascending=True)
     
     fig_actividades = px.bar(
@@ -80,17 +77,18 @@ def analizar_seguridad_publica(df):
         x=col_atendidos,
         y=col_actividad,
         orientation='h',
-        title="<b>Volumen de Acciones por Tipo de Actividad Policial</b>",
-        labels={col_atendidos: "Total de Atenciones", col_actividad: "Actividad"},
-        color_discrete_sequence=[GUINDA_INST]
+        text=col_atendidos,
+        title="<b>VOLUMEN DE ACCIONES POR TIPO DE ACTIVIDAD POLICIAL</b>",
+        color_discrete_sequence=[VERDE_OSCURO]
     )
+    fig_actividades.update_traces(texttemplate='%{text:,.0f}', textposition='inside', insidetextanchor='middle')
     fig_actividades.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="white",
         font=dict(family="sans-serif", size=11, color=TEXTO_DARK),
-        margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(showgrid=True, gridcolor="#f3f4f6"),
-        yaxis=dict(showgrid=False)
+        margin=dict(l=20, r=20, t=50, b=20),
+        xaxis=dict(showgrid=True, gridcolor="#f3f4f6", title=""),
+        yaxis=dict(showgrid=False, title="")
     )
 
     df_variable = df_seg.groupby(col_variable, as_index=False)[col_atendidos].sum()
@@ -99,19 +97,19 @@ def analizar_seguridad_publica(df):
         df_variable,
         names=col_variable,
         values=col_atendidos,
-        title="<b>Distribución Estratégica por Variable de Seguridad</b>",
-        color_discrete_sequence=[GUINDA_INST, DORADO_INST, "#115e59", "#d97706", "#2563eb"],
+        title="<b>DISTRIBUCIÓN ESTRATÉGICA POR VARIABLE</b>",
+        color_discrete_sequence=[VERDE_OSCURO, DORADO_INST, GUINDA_INST, "#2563eb", "#d97706"],
         hole=0.4
     )
     fig_variable.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="white",
         font=dict(family="sans-serif", size=11, color=TEXTO_DARK),
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
-    # Tabla detallada para el informe
+    # Tabla detallada interactiva
     columnas_tabla = [
         {"name": "Actividad Operativa", "id": col_actividad},
         {"name": "Variable Estratégica", "id": col_variable},
@@ -121,8 +119,8 @@ def analizar_seguridad_publica(df):
 
     tabla_detallada = html.Div([
         html.Div([
-            html.I(className="bi bi-table me-2"), "REGISTROS DETALLADOS DE SEGURIDAD PÚBLICA MUNICIPAL"
-        ], style={"backgroundColor": GUINDA_INST, "color": "white", "padding": "8px 12px", "fontWeight": "bold", "fontSize": "0.75rem", "borderRadius": "6px 6px 0 0"}),
+            html.H6("REGISTROS DETALLADOS DE SEGURIDAD PÚBLICA MUNICIPAL", className="m-0 font-weight-bold", style={"color": GUINDA_INST, "fontSize": "0.95rem"})
+        ], className="mb-3 p-3 bg-white rounded-3 shadow-sm border"),
         html.Div([
             dash_table.DataTable(
                 data=df_seg.to_dict('records'),
@@ -131,22 +129,26 @@ def analizar_seguridad_publica(df):
                 filter_action='native',
                 sort_action='native',
                 style_table={'overflowX': 'auto'},
-                style_header={'backgroundColor': '#f3f4f6', 'color': TEXTO_DARK, 'fontWeight': 'bold', 'fontSize': '11px', 'textAlign': 'left', 'borderBottom': '2px solid #e5e7eb'},
-                style_cell={'padding': '10px 8px', 'fontSize': '11px', 'fontFamily': 'sans-serif', 'textAlign': 'left', 'borderBottom': '1px solid #f9fafb', 'color': TEXTO_DARK},
-                style_data_conditional=[
-                    {'if': {'row_index': 'odd'}, 'backgroundColor': '#f9fafb'}
-                ]
+                style_header={'backgroundColor': '#f3f4f6', 'color': TEXTO_DARK, 'fontWeight': 'bold', 'fontSize': '11px', 'textAlign': 'left'},
+                style_cell={'padding': '8px', 'fontSize': '11px', 'textAlign': 'left', 'fontFamily': 'sans-serif', 'color': TEXTO_DARK},
+                style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#f9fafb'}]
             )
-        ], className="border border-top-0 p-2 bg-white", style={"borderRadius": "0 0 6px 6px"})
-    ], className="mb-3 shadow-sm")
+        ], className="p-3 bg-white rounded-3 shadow-sm border")
+    ])
 
     return html.Div([
+        html.Div([
+            html.H5("EVALUACIÓN Y ACCIONES DE SEGURIDAD PÚBLICA", className="m-0 font-weight-bold", style={"color": GUINDA_INST, "fontSize": "1.1rem"}),
+            html.P("Reporte operativo de vigilancia, prevención y atención ciudadana.", className="text-muted m-0", style={"fontSize": "0.82rem"})
+        ], className="mb-3"),
+
         tarjetas_kpi,
+
         dbc.Row([
-            dbc.Col(html.Div([dcc.Graph(figure=fig_actividades, config={"displayModeBar": False})], className="bg-white border p-2 shadow-sm mb-3", style={"borderRadius": "6px"}), md=7),
-            dbc.Col(html.Div([dcc.Graph(figure=fig_variable, config={"displayModeBar": False})], className="bg-white border p-2 shadow-sm mb-3", style={"borderRadius": "6px"}), md=5),
+            dbc.Col(html.Div([dcc.Graph(figure=fig_actividades, config={"displayModeBar": False})], className="bg-white border p-2 shadow-sm mb-3 rounded-3"), md=7),
+            dbc.Col(html.Div([dcc.Graph(figure=fig_variable, config={"displayModeBar": False})], className="bg-white border p-2 shadow-sm mb-3 rounded-3"), md=5),
         ]),
-        dbc.Row([
-            dbc.Col(tabla_detallada, md=12)
-        ])
-    ], style={"padding": "5px"})
+
+        tabla_detallada
+
+    ], style={"padding": "10px"})
