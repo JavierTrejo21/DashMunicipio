@@ -437,3 +437,18 @@ html body .eje-estrategico-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
     border-color: #CBD5E1 !important;
 }
+/* =========================================================
+   4. AJUSTES ESPECÍFICOS PARA LA NUEVA DISPOSICIÓN DE TARJETAS
+   ========================================================= */
+
+/* Asegurar que las tarjetas mantengan el cursor de interacción */
+html body .card[id*="tarjeta-eje"] {
+    cursor: pointer !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+html body .card[id*="tarjeta-eje"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+    border-color: #CBD5E1 !important;
+}

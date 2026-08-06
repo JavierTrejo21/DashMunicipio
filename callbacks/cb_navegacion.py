@@ -42,9 +42,12 @@ def register_navegacion_callbacks(app):
         if df.empty:
             ejes_defecto = [
                 (1, "GOBIERNO PARTICIPATIVO Y TRANSFORMADOR"),
-                (2, "BIENESTAR Y PROSPERIDAD"),
-                (3, "DESARROLLO ECONÓMICO Y CULTURAL"),
+                (2, "DESARROLLO ECONÓMICO Y CULTURAL"),
+                (3, "BIENESTAR Y PROSPERIDAD"),
                 (4, "DESARROLLO SOSTENIBLE E INFRAESTRUCTURA"),
+                (5, "IGUALDAD Y DERECHOS HUMANOS"),
+                (6, "TRANSPARENCIA Y RENDICIÓN DE CUENTAS"),
+                (7, "INNOVACIÓN Y GOBIERNA DIGITAL"),
             ]
             cursor = conn.cursor()
             cursor.execute(
@@ -59,119 +62,147 @@ def register_navegacion_callbacks(app):
 
         conn.close()
 
-        tarjetas = []
-        for _, f in df.iterrows():
-            id_acuerdo = int(f["id"])
-            nombre_acuerdo = f["nombre"]
-            porcentaje_base = (
-                85
-                if id_acuerdo == 1
-                else (70 if id_acuerdo == 2 else (90 if id_acuerdo == 3 else 60))
-            )
-            icono_clase = DICCIONARIO_ICONOS_ACUERDOS.get(
-                id_acuerdo, "bi bi-folder"
-            )
+        paleta_colores = ["#781d37", "#1ca2a9", "#781d37", "#1ca2a9", "#781d37", "#1ca2a9", "#781d37"]
+        iconos_disponibles = [
+            "bi bi-diagram-3-fill",
+            "bi bi-rocket-takeoff-fill",
+            "bi bi-rocket-fill",
+            "bi bi-lightbulb-fill",
+            "bi bi-lightbulb",
+            "bi bi-display",
+            "bi bi-folder-fill"
+        ]
 
-            fig_dona = go.Figure(
-                go.Pie(
-                    values=[porcentaje_base, 100 - porcentaje_base],
-                    hole=0.72,
-                    marker_colors=["#691c32", "#e5e7eb"],
-                    textinfo="none",
-                    hoverinfo="none",
-                )
-            )
-            fig_dona.update_layout(
-                showlegend=False,
-                margin=dict(t=0, b=0, l=0, r=0),
-                width=75,
-                height=75,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-            )
+        config_elementos = {}
+        for idx, row in df.iterrows():
+            id_acuerdo = int(row["id"])
+            color_asignado = paleta_colores[(id_acuerdo - 1) % len(paleta_colores)]
+            icono_asignado = iconos_disponibles[(id_acuerdo - 1) % len(iconos_disponibles)]
+            config_elementos[id_acuerdo] = {
+                "color": color_asignado,
+                "sub": "Seguimiento estratégico y evaluación de indicadores del Plan Municipal.",
+                "icon": icono_asignado,
+                "titulo": row["nombre"]
+            }
 
-            tarjetas.append(
-                dbc.Col(
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.I(
-                                        className=icono_clase,
-                                        style={
-                                            "position": "absolute",
-                                            "fontSize": "1.3rem",
-                                            "color": "#691c32",
-                                            "zIndex": "10",
-                                        },
-                                    ),
-                                    dcc.Graph(
-                                        figure=fig_dona,
-                                        config={"displayModeBar": False},
-                                    ),
-                                ],
-                                style={
-                                    "display": "flex",
-                                    "justifyContent": "center",
-                                    "alignItems": "center",
-                                    "position": "relative",
-                                    "marginBottom": "15px",
-                                },
-                            ),
-                            html.P(
-                                nombre_acuerdo,
-                                className="text-center mb-2 font-weight-bold",
-                                style={
-                                    "fontSize": "0.78rem",
-                                    "color": "#1f2937",
-                                    "lineHeight": "1.4",
-                                },
-                            ),
-                            html.H6(
-                                f"{porcentaje_base}%",
-                                className="text-center font-weight-bold",
-                                style={
-                                    "color": "#691c32",
-                                    "fontSize": "0.9rem",
-                                    "margin": "0",
-                                },
-                            ),
-                            dbc.Button(
-                                "",
-                                id={
-                                    "type": "btn-acuerdo",
-                                    "index": id_acuerdo,
-                                },
-                                style={
-                                    "position": "absolute",
-                                    "top": "0",
-                                    "left": "0",
-                                    "width": "100%",
-                                    "height": "100%",
-                                    "opacity": "0",
-                                    "cursor": "pointer",
-                                    "zIndex": "20",
-                                },
-                            ),
-                        ],
-                        className="p-4 bg-white border text-center position-relative h-100 shadow-sm",
-                        style={
-                            "borderRadius": "18px",
-                            "borderColor": "#e5e7eb",
-                        },
+        def crear_tarjeta_radial(id_acuerdo, conf, porcentaje_base):
+            color_actual = conf["color"]
+            return html.Div(
+                [
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                html.I(className=conf["icon"], style={"fontSize": "1.1rem", "color": color_actual})
+                            ], style={"width": "42px", "height": "42px", "borderRadius": "50%", "backgroundColor": f"{color_actual}22", "border": f"1.5px solid {color_actual}", "display": "flex", "alignItems": "center", "justifyContent": "center", "margin": "auto"})
+                        ], className="col-2 d-flex align-items-center justify-content-center"),
+                        dbc.Col([
+                            html.H6(conf["titulo"], className="mb-1 fw-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                            html.P(conf["sub"], className="text-muted mb-2 text-truncate", style={"fontSize": "0.62rem"}),
+                            html.Div([
+                                html.Div(style={"width": f"{porcentaje_base}%", "height": "4px", "backgroundColor": color_actual, "borderRadius": "4px"})
+                            ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "4px", "overflow": "hidden", "marginBottom": "4px"}),
+                            html.Small(f"{porcentaje_base}%", className="fw-bold text-dark", style={"fontSize": "0.65rem"})
+                        ], className="col-10")
+                    ], className="g-0 align-items-center"),
+                    dbc.Button(
+                        "",
+                        id={"type": "btn-acuerdo", "index": id_acuerdo},
+                        style={"position": "absolute", "top": "0", "left": "0", "width": "100%", "height": "100%", "opacity": "0", "cursor": "pointer", "zIndex": "20"},
                     ),
-                    width=12,
-                    sm=6,
-                    md=3,
-                    className="mb-4",
-                )
+                ],
+                className="p-3 bg-white border shadow-sm position-relative mb-3",
+                style={"borderRadius": "12px", "borderColor": "#e5e7eb", "cursor": "pointer", "width": "100%", "maxWidth": "460px", "height": "95px", "margin": "0 auto"},
             )
-        return tarjetas
+
+        lista_ids = list(config_elementos.keys())
+        
+        id_superior = lista_ids[0]
+        tarjeta_superior = crear_tarjeta_radial(id_superior, config_elementos[id_superior], 75)
+
+        ids_restantes = lista_ids[1:]
+        mitad = math.ceil(len(ids_restantes) / 2)
+        ids_izq = ids_restantes[:mitad]
+        ids_der = ids_restantes[mitad:]
+
+        tarjetas_izq = [
+            crear_tarjeta_radial(i, config_elementos[i], 70 + (i * 3) % 20) for i in ids_izq
+        ]
+        
+        tarjetas_der = [
+            crear_tarjeta_radial(i, config_elementos[i], 65 + (i * 4) % 25) for i in ids_der
+        ]
+
+        elementos_circulos = []
+        for idx, row in df.iterrows():
+            id_acuerdo = int(row["id"])
+            conf = config_elementos[id_acuerdo]
+            elementos_circulos.append(
+                html.Div([
+                    dbc.Button(
+                        html.I(className=conf["icon"] + " text-white", style={"fontSize": "0.9rem"}),
+                        id={"type": "btn-acuerdo", "index": id_acuerdo},
+                        color="link",
+                        style={"width": "34px", "height": "34px", "padding": "0", "textDecoration": "none"}
+                    )
+                ], style={"width": "34px", "height": "34px", "borderRadius": "50%", "backgroundColor": conf["color"], "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 1px 3px rgba(0,0,0,0.1)", "cursor": "pointer", "marginBottom": "58px", "position": "relative", "zIndex": "25"})
+            )
+
+        circulos_centrales = html.Div(
+            elementos_circulos,
+            className="d-flex flex-column align-items-center justify-content-center",
+            style={"paddingTop": "0px"}
+        )
+
+        # Panel central con un ancho proporcional y estético acorde a las tarjetas laterales
+        panel_areas_central = html.Div(
+            id="contenedor-areas-dinamico",
+            children=[
+                html.Div([
+                    html.Div([
+                        html.I(className="bi bi-folder2-open text-muted me-2", style={"fontSize": "0.9rem"}),
+                        html.H6("ÁREAS ADMINISTRATIVAS", className="text-muted fw-bold m-0", style={"fontSize": "0.75rem", "letterSpacing": "0.4px"})
+                    ], className="d-flex align-items-center mb-3 pb-2 border-bottom"),
+                    html.Div(
+                        id="contenedor-botones-areas", 
+                        children=[
+                            html.Small("Selecciona un acuerdo.", className="text-muted fst-italic", style={"fontSize": "0.75rem"})
+                        ], 
+                        className="d-flex flex-column gap-2"
+                    )
+                ], className="bg-white p-3 border shadow-sm mx-auto", style={"borderRadius": "12px", "borderColor": "#e5e7eb", "width": "100%", "maxWidth": "460px"})
+            ],
+            style={"display": "none", "width": "150%"}
+        )
+
+        layout_distribucion = html.Div([
+            dbc.Row([
+                dbc.Col(tarjeta_superior, xs=12, md=8, className="mx-auto")
+            ], className="mb-3"),
+            
+            # Distribución simétrica en 3 columnas equilibradas (md=4 cada una)
+            dbc.Row([
+                dbc.Col(
+                    html.Div(tarjetas_izq, className="d-flex flex-column align-items-center w-100"), 
+                    xs=12, md=4
+                ),
+                dbc.Col([
+                    html.Div(circulos_centrales, id="wrapper-circulos"),
+                    panel_areas_central
+                ], xs=12, md=4, className="d-flex flex-column align-items-center justify-content-start pt-1"),
+                dbc.Col(
+                    html.Div(tarjetas_der, className="d-flex flex-column align-items-center w-100"), 
+                    xs=12, md=4
+                )
+            ], className="align-items-start")
+        ])
+
+        return html.Div([layout_distribucion])
 
     @app.callback(
         [
-            Output("collapse-areas", "is_open"),
             Output("contenedor-botones-areas", "children"),
+            Output("contenedor-areas-dinamico", "style"),
+            Output("wrapper-circulos", "style"),
         ],
         [Input({"type": "btn-acuerdo", "index": ALL}, "n_clicks")],
         prevent_initial_call=True,
@@ -179,16 +210,20 @@ def register_navegacion_callbacks(app):
     def desplegar_areas(n_clicks):
         ctx = dash.callback_context
         if not ctx.triggered:
-            return no_update, no_update
+            return no_update, no_update, no_update
 
         prop_id = ctx.triggered[0]["prop_id"]
         if "value" in prop_id or not any(x for x in n_clicks if x is not None):
-            return no_update, no_update
+            return no_update, no_update, no_update
 
         try:
-            idx = json.loads(prop_id.split(".")[0])["index"]
-        except (json.JSONDecodeError, KeyError, IndexError):
-            return no_update, no_update
+            match_idx = re.search(r'"index":\s*(\d+)', prop_id)
+            idx = int(match_idx.group(1)) if match_idx else None
+        except Exception:
+            return no_update, no_update, no_update
+
+        if idx is None:
+            return no_update, no_update, no_update
 
         conn = sqlite3.connect(DB_GESTION)
         df = pd.read_sql_query(
@@ -197,10 +232,8 @@ def register_navegacion_callbacks(app):
         conn.close()
 
         if df.empty:
-            return True, html.Small(
-                "⚠️ No hay áreas asignadas a este eje estratégico todavía.",
-                className="text-muted p-2",
-            )
+            contenido_vacio = html.Small("⚠️ No hay áreas asignadas.", className="text-muted fst-italic", style={"fontSize": "0.75rem"})
+            return contenido_vacio, {"display": "block", "width": "100%"}, {"display": "none"}
 
         def extraer_clave_orden(nombre):
             match = re.match(r"^([\d\.]+)", str(nombre).strip())
@@ -212,7 +245,7 @@ def register_navegacion_callbacks(app):
         df["orden_num"] = df["nombre"].apply(extraer_clave_orden)
         df = df.sort_values(by="orden_num").drop(columns=["orden_num"])
 
-        botones = []
+        elementos_lista = []
         for _, a in df.iterrows():
             nombre_area = a["nombre"]
             match_clave = re.match(r"^([\d\.]+)\s*(.*)", nombre_area)
@@ -223,59 +256,58 @@ def register_navegacion_callbacks(app):
                 num_tag = "•"
                 texto_tag = nombre_area
 
-            btn_content = html.Div(
+            item_content = html.Div(
                 [
-                    html.Span(
-                        num_tag,
-                        style={
-                            "backgroundColor": "#691C32",
-                            "color": "#FFFFFF",
-                            "padding": "3px 8px",
-                            "borderRadius": "8px",
-                            "fontSize": "0.72rem",
-                            "fontWeight": "700",
-                            "marginRight": "8px",
-                        },
-                    ),
-                    html.Span(
-                        texto_tag.upper(),
-                        style={
-                            "fontSize": "0.75rem",
-                            "fontWeight": "600",
-                            "color": "#334155",
-                            "letterSpacing": "0.3px",
-                        },
-                    ),
+                    html.Div(
+                        [
+                            html.Span(
+                                num_tag,
+                                style={
+                                    "backgroundColor": "#781d37",
+                                    "color": "#FFFFFF",
+                                    "padding": "2px 6px",
+                                    "borderRadius": "6px",
+                                    "fontSize": "0.68rem",
+                                    "fontWeight": "700",
+                                    "marginRight": "8px",
+                                    "minWidth": "26px",
+                                    "textAlign": "center"
+                                },
+                            ),
+                            html.Span(
+                                texto_tag.upper(),
+                                style={
+                                    "fontSize": "0.72rem",
+                                    "fontWeight": "600",
+                                    "color": "#1e293b",
+                                    "letterSpacing": "0.2px",
+                                    "lineHeight": "1.1"
+                                },
+                            ),
+                        ],
+                        className="d-flex align-items-center text-truncate"
+                    )
                 ],
-                className="d-flex align-items-center",
+                className="d-flex align-items-center justify-content-between w-100"
             )
 
-            botones.append(
+            elementos_lista.append(
                 dbc.Button(
-                    btn_content,
+                    item_content,
                     id={"type": "btn-area", "index": a["id"]},
                     color="light",
-                    className="m-1 shadow-sm border",
+                    className="shadow-sm border mb-2 text-start w-100 py-2 px-2",
                     style={
-                        "borderRadius": "10px",
-                        "border": "1px solid #CBD5E1",
-                        "backgroundColor": "#FFFFFF",
-                        "padding": "6px 14px",
+                        "borderRadius": "8px",
+                        "backgroundColor": "#f8fafc",
+                        "borderColor": "#e2e8f0",
+                        "transition": "all 0.2s ease"
                     },
                 )
             )
 
-        return True, html.Div(
-            botones,
-            style={
-                "display": "flex",
-                "flexWrap": "wrap",
-                "gap": "6px",
-                "padding": "6px 0",
-            },
-        )
+        return elementos_lista, {"display": "block", "width": "100%"}, {"display": "none"}
 
-    # --- CALLBACK PRINCIPAL CON RENDERIZADO DIRECTO ---
     @app.callback(
         [
             Output("contenido-area", "children"),
@@ -358,7 +390,7 @@ def register_navegacion_callbacks(app):
                     html.H5(
                         f"📌 RESUMEN ESTRATÉGICO: {nombre_area}",
                         className="alert-heading fw-bold mb-2",
-                        style={"fontSize": "0.95rem", "color": "#691c32"},
+                        style={"fontSize": "0.95rem", "color": "#781d37"},
                     ),
                     html.P(
                         info_est["resumen"],
@@ -377,7 +409,7 @@ def register_navegacion_callbacks(app):
                 color="light",
                 className="mt-2 mb-3 shadow-sm border",
                 style={
-                    "borderLeft": "5px solid #691c32",
+                    "borderLeft": "5px solid #781d37",
                     "backgroundColor": "#ffffff",
                     "borderRadius": "10px"
                 },
@@ -395,7 +427,7 @@ def register_navegacion_callbacks(app):
                         color="light",
                         style={
                             "borderColor": "#cbd5e1",
-                            "color": "#691c32",
+                            "color": "#781d37",
                             "borderRadius": "10px",
                             "backgroundColor": "#ffffff"
                         },
@@ -420,7 +452,7 @@ def register_navegacion_callbacks(app):
                         html.H2(
                             f"📊 {nombre_area}",
                             className="m-0",
-                            style={"fontSize": "1.1rem", "fontWeight": "700", "color": "#691c32"},
+                            style={"fontSize": "1.1rem", "fontWeight": "700", "color": "#781d37"},
                         ),
                     ],
                     className="p-3 mb-3 bg-white shadow-sm",
@@ -553,7 +585,6 @@ def register_navegacion_callbacks(app):
             conn.close()
             return no_update
 
-    # --- CALLBACK PARA LA DESCARGA DEL ARCHIVO ORIGINAL DES01_CHU_02_2026.xlsx ---
     @app.callback(
         Output("download-excel-mir-original", "data"),
         Input("btn-descargar-mir-original", "n_clicks"),
@@ -565,7 +596,6 @@ def register_navegacion_callbacks(app):
 
         nombre_archivo = "DES01_CHU_02_2026.xlsx"
 
-        # 1. Intentar buscar el archivo original de forma local en el servidor (ej. carpeta actual o una subcarpeta de cargas)
         rutas_posibles = [
             nombre_archivo,
             os.path.join("uploads", nombre_archivo),
@@ -576,19 +606,15 @@ def register_navegacion_callbacks(app):
             if os.path.exists(ruta):
                 return dcc.send_file(ruta)
 
-        # 2. Si manejas el enlace de Google Drive directamente, puedes transformar el link para forzar la descarga de exportación:
-        # Link proporcionado: https://docs.google.com/spreadsheets/d/11jBjOTf6nqwGzaVMj4AQyR4ApYT2MaYJ/edit?...
         file_id = "11jBjOTf6nqwGzaVMj4AQyR4ApYT2MaYJ"
         url_descarga_drive = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
 
         try:
-            # Descargamos temporalmente el archivo desde Google Drive para enviarlo al navegador del usuario
             req = urllib.request.Request(url_descarga_drive, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req) as response:
                 contenido_archivo = response.read()
             
             return dict(content=contenido_archivo, filename=nombre_archivo)
         except Exception as e:
-            # Si falla la red o el archivo local no existe, retornamos un DataFrame de aviso como respaldo de emergencia
             df_error = pd.DataFrame({"Error": [f"No se pudo descargar el archivo original '{nombre_archivo}': {str(e)}"]})
             return dcc.send_data_frame(df_error.to_excel, "Error_Descarga.xlsx", index=False)

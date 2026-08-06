@@ -1,4 +1,4 @@
-# [source: 2]
+# [source: 2, 14]
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
@@ -123,7 +123,8 @@ def servir_layout():
                     style={"font-size": "0.82rem", "letter-spacing": "0.5px"}
                 ),
                 dbc.Row(id="contenedor-tarjetas-acuerdos", className="mb-4 g-3", children=[
-                    # Tarjeta 1: Gobierno Participativo y Transformador
+                    
+                    # Tarjeta 1: Gobierno Participativo y Transformador (Columna de 3)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -143,9 +144,10 @@ def servir_layout():
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
                         ], id={"type": "tarjeta-eje", "index": 1}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        md=6, lg=3, className="mb-3"
                     ),
-                    # Tarjeta 2: Desarrollo Económico y Cultural
+                    
+                    # Tarjeta 2: Desarrollo Económico y Cultural (Columna de 3)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -165,9 +167,10 @@ def servir_layout():
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
                         ], id={"type": "tarjeta-eje", "index": 2}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        md=6, lg=3, className="mb-3"
                     ),
-                    # Tarjeta 3: Bienestar y Prosperidad
+                    
+                    # Tarjeta 3: Bienestar y Prosperidad (Columna de 3)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -187,9 +190,10 @@ def servir_layout():
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
                         ], id={"type": "tarjeta-eje", "index": 3}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        md=6, lg=3, className="mb-3"
                     ),
-                    # Tarjeta 4: Desarrollo Sostenible e Infraestructura
+                    
+                    # Tarjeta 4: Desarrollo Sostenible e Infraestructura (Columna de 3)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -209,9 +213,10 @@ def servir_layout():
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
                         ], id={"type": "tarjeta-eje", "index": 4}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        md=6, lg=3, className="mb-3"
                     ),
-                    # Tarjeta 5: Igualdad y Derechos Humanos
+                    
+                    # Tarjeta 5: Igualdad y Derechos Humanos (Columna de 4 para abajo)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -231,9 +236,33 @@ def servir_layout():
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
                         ], id={"type": "tarjeta-eje", "index": 5}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        md=6, lg=4, className="mb-3"
                     ),
-                    # Tarjeta 6: Transparencia y Rendición de Cuentas
+                    
+                    # Tarjeta 6: Gobierno Tecnológico y Digital (Columna de 4 para abajo)
+                    dbc.Col(
+                        html.Div([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Div([
+                                        html.I(className="bi bi-laptop", style={"fontSize": "1.3rem", "color": "white"})
+                                    ], style={"width": "50px", "height": "50px", "borderRadius": "50%", "backgroundColor": "#245975", "display": "flex", "alignItems": "center", "justifyContent": "center", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"}),
+                                    width="auto", className="d-flex align-items-center pe-2"
+                                ),
+                                dbc.Col([
+                                    html.H6("GOBIERNO TECNOLÓGICO Y DIGITAL", className="mb-1 font-weight-bold text-dark", style={"fontSize": "0.78rem", "lineHeight": "1.2"}),
+                                    html.P("Innovación y digitalización para los procesos internos.", className="text-muted mb-2", style={"fontSize": "0.65rem", "lineHeight": "1.1", "display": "-webkit-box", "-webkit-line-clamp": "2", "-webkit-box-orient": "vertical", "overflow": "hidden"}),
+                                    html.Div([
+                                        html.Div(style={"width": "60%", "height": "5px", "backgroundColor": "#245975", "borderRadius": "3px"})
+                                    ], style={"width": "100%", "backgroundColor": "#e5e7eb", "borderRadius": "3px", "overflow": "hidden", "marginBottom": "2px"}),
+                                    html.Small("60%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#245975"})
+                                ], className="ps-2")
+                            ], className="g-0 align-items-center")
+                        ], id={"type": "tarjeta-eje", "index": 6}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        md=6, lg=4, className="mb-3"
+                    ),
+                    
+                    # Tarjeta 7: Transparencia y Rendición de Cuentas (Columna de 4 para abajo)
                     dbc.Col(
                         html.Div([
                             dbc.Row([
@@ -252,9 +281,10 @@ def servir_layout():
                                     html.Small("60%", className="font-weight-bold", style={"fontSize": "0.68rem", "color": "#38b000"})
                                 ], className="ps-2")
                             ], className="g-0 align-items-center")
-                        ], id={"type": "tarjeta-eje", "index": 6}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
-                        width=12, md=6, className="mb-3"
+                        ], id={"type": "tarjeta-eje", "index": 7}, className="p-3 bg-white border shadow-sm h-100", style={"borderRadius": "12px", "cursor": "pointer", "transition": "all 0.2s ease-in-out"}),
+                        md=6, lg=4, className="mb-3"
                     ),
+                    
                 ]),
             ]),
 
