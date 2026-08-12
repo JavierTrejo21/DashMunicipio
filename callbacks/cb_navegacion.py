@@ -192,7 +192,7 @@ def register_navegacion_callbacks(app):
                         className="mt-4",
                     ),
                 ]
-            ), {"tabla": tabla, "id": idx}, "", {"display": "none"}
+            ), {"tabla": tabla, "id": idx}, "", no_update
 
         try:
             try:
@@ -401,7 +401,7 @@ def register_navegacion_callbacks(app):
                 ]
             )
 
-            return contenido, {"tabla": tabla, "id": idx}, "", {"display": "none"}
+            return contenido, {"tabla": tabla, "id": idx}, "", no_update
 
         except Exception as e:
             traceback.print_exc()
@@ -434,6 +434,8 @@ def register_navegacion_callbacks(app):
             return not is_open
         return is_open
 
+    # El callback 'volver_a_ejes' se mantiene por compatibilidad si existiera otro botón, 
+    # pero ya no se ocultan los ejes al seleccionar un área.
     @app.callback(
         [
             Output("contenido-area", "children", allow_duplicate=True),
@@ -446,5 +448,5 @@ def register_navegacion_callbacks(app):
     )
     def volver_a_ejes(n):
         if n:
-            return "", "", False, {"display": "block"}
+            return "", "", False, no_update
         return no_update, no_update, no_update, no_update

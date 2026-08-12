@@ -31,17 +31,8 @@ def generar_banner_institucional(titulo_principal="SISTEMA DE GESTIÓN MUNICIPAL
     })
 
 def generar_bloque_encabezado_area(nombre_eje, clave_area, nombre_area, icono_clase="ti ti-briefcase", resumen_texto="Área operativa integrada en los acuerdos del Plan Municipal de Desarrollo."):
-    """Genera el bloque completo de breadcrumbs, cabecera de área y resumen estratégico."""
+    """Genera el bloque completo de cabecera de área y resumen estratégico (Breadcrumbs eliminados)."""
     return html.Div([
-        # Breadcrumbs
-        html.Div([
-            html.Span([html.I(className="ti ti-arrow-left"), " Volver a ejes"], id="btn-volver-ejes", className="back"),
-            html.Span("/", className="sep"),
-            html.Span(nombre_eje),
-            html.Span("/", className="sep"),
-            html.Span(f"{clave_area} {nombre_area}", className="tag")
-        ], className="detail-crumbs"),
-
         # Tarjeta encabezado del área
         html.Div([
             html.Div(html.I(className=icono_clase), className="area-header-badge"),
@@ -78,15 +69,8 @@ def generar_bloque_encabezado_area(nombre_eje, clave_area, nombre_area, icono_cl
 
 
 def generar_breadcrumbs(nombre_eje, nombre_area):
-    """Genera la navegación jerárquica V4."""
-    return html.Div([
-        html.Span([html.I(className="bi bi-arrow-left me-1"), "Volver a ejes"], 
-                  id="btn-volver-ejes", className="back"),
-        html.Span("/", className="sep mx-2"),
-        html.Span(nombre_eje),
-        html.Span("/", className="sep mx-2"),
-        html.Span(nombre_area, className="tag")
-    ], className="detail-crumbs")
+    """Genera la navegación jerárquica (Vaciado para no mostrarse)."""
+    return html.Div()
 
 def generar_header_area_v4(nombre_area, icono="bi-briefcase"):
     """Genera la tarjeta de encabezado con badge circular."""
