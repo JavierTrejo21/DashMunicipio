@@ -78,7 +78,7 @@ def analizar_orientacion_alimentaria(df):
         fig_donut.update_traces(
             textposition='inside',
             textinfo='percent',
-            textfont=dict(size=11, family="sans-serif", color="white", weight="bold"),
+            textfont=dict(size=11, family="sans-serif", color="white"),
             marker=dict(line=dict(color='#ffffff', width=2)),
             hovertemplate="<b>%{label}</b><br>Atendidos: %{value:,.0f}<br>Porcentaje: %{percent}<extra></extra>"
         )

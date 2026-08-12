@@ -58,7 +58,7 @@ def analizar_datos_estrategicos(nombre_archivo, df):
             df = df[condicion_valida]
             
         # 4. Elimina cualquier registro residual donde no existan datos alfanuméricos
-        df = df[df.astype(str).apply(lambda x: ''.join(x), axis=1).str.strip() != '']
+        df = df[df.astype(str).apply(lambda x: ''.join([str(v) for v in x if pd.notna(v)]).strip() != '', axis=1)]
     # ---------------------------------------------------------------------
 
     # Si el archivo seleccionado se encuentra en nuestro mapa de soluciones
@@ -296,6 +296,8 @@ MAPEO_ANALISIS = {
     "3_5_BIBLIOTECAS_Y_C_C_A": analizar_bibliotecas,
     "BIBLIOTECAS_C_C_A": analizar_bibliotecas,
     "3.5 BIBLIOTECAS y C.C.A.": analizar_bibliotecas,
+    "3.5 BIBLIOTECAS Y C.C.A": analizar_bibliotecas,
+    "3.5 BIBLIOTECAS Y C.C.A.": analizar_bibliotecas,
     "3.5 BIBLIOTECAS y C.C.A.xlsx - Hoja1": analizar_bibliotecas,
     "3.5 BIBLIOTECAS y C.C.A.xlsx - Hoja1.csv": analizar_bibliotecas,
     # --- ÁREA: 2.10 SECRETARÍA GENERAL ---

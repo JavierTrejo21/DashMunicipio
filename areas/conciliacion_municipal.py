@@ -48,11 +48,15 @@ def analizar_conciliacion_municipal(df):
         if col_mes: df_cm[col_mes] = df_cm[col_mes].astype(str).str.strip().str.title()
 
         # =================================================================
-        # 3. CÓMPUTO DE REGLAS DE NEGOCIO (KPIs)
+        # 3. CÓMPUTO DE REGLAS DE NEGOCIO (KPIs con búsqueda flexible)
         # =================================================================
-        total_arreglos = df_cm[df_cm[col_actividad].str.contains("ARREGLOS CONCILIATORIOS", case=False, na=False)][col_cantidad_sistema].sum()
-        total_pensiones = df_cm[df_cm[col_actividad].str.contains("PENSIÓN ALIMENTICIA|PENSION", case=False, na=False)][col_cantidad_sistema].sum()
-        total_seguridad = df_cm[df_cm[col_actividad].str.contains("SEGURIDAD PUBLICA|POLICIA", case=False, na=False)][col_cantidad_sistema].sum()
+        if col_actividad:
+            total_arreglos = df_cm[df_cm[col_actividad].str.contains("ARREGLO|CONCILIA", case=False, na=False)][col_cantidad_sistema].sum()
+            total_pensiones = df_cm[df_cm[col_actividad].str.contains("PENSIÓN|PENSION", case=False, na=False)][col_cantidad_sistema].sum()
+            total_seguridad = df_cm[df_cm[col_actividad].str.contains("SEGURIDAD|POLICIA|PUESTA", case=False, na=False)][col_cantidad_sistema].sum()
+        else:
+            total_arreglos, total_pensiones, total_seguridad = 0, 0, 0
+            
         total_atenciones = df_cm[col_cantidad_sistema].sum()
 
         # =================================================================
@@ -91,15 +95,29 @@ def analizar_conciliacion_municipal(df):
         # =================================================================
         # 5. CONSTRUCCIÓN DE LA TABLA (Con scroll vertical y sin ceros)
         # =================================================================
-        df_resumen = df_cm.groupby([col_actividad, col_variable])[col_cantidad_sistema].sum().reset_index()
+        if col_actividad and col_variable:
+            df_resumen = df_cm.groupby([col_actividad, col_variable])[col_cantidad_sistema].sum().reset_index()
+        elif col_actividad:
+            df_cm['VARIABLE_GENERICA'] = 'General'
+            df_resumen = df_cm.groupby([col_actividad, 'VARIABLE_GENERICA'])[col_cantidad_sistema].sum().reset_index()
+            col_variable = 'VARIABLE_GENERICA'
+        else:
+            df_resumen = pd.DataFrame({
+                'ACTIVIDAD': ['Total General'],
+                'VARIABLE': ['General'],
+                col_cantidad_sistema: [total_atenciones]
+            })
+            col_actividad = 'ACTIVIDAD'
+            col_variable = 'VARIABLE'
+
         df_resumen = df_resumen[df_resumen[col_cantidad_sistema] > 0]
         df_resumen = df_resumen.sort_values(by=col_cantidad_sistema, ascending=False)
 
         filas_tabla = []
         for _, r in df_resumen.iterrows():
             filas_tabla.append(html.Tr([
-                html.Td(r[col_actividad], style={"fontSize": "11px", "color": TEXTO_DARK, "textAlign": "left", "padding": "8px 14px", "fontWeight": "500", "backgroundColor": "#ffffff", "border": "1px solid #e5e7eb"}),
-                html.Td(r[col_variable], style={"fontSize": "11px", "color": TEXTO_SECUNDARIO, "fontWeight": "500", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "left", "border": "1px solid #e5e7eb"}),
+                html.Td(str(r[col_actividad]), style={"fontSize": "11px", "color": TEXTO_DARK, "textAlign": "left", "padding": "8px 14px", "fontWeight": "500", "backgroundColor": "#ffffff", "border": "1px solid #e5e7eb"}),
+                html.Td(str(r[col_variable]), style={"fontSize": "11px", "color": TEXTO_SECUNDARIO, "fontWeight": "500", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "left", "border": "1px solid #e5e7eb"}),
                 html.Td(f"{r[col_cantidad_sistema]:,.0f}", style={"fontSize": "11px", "color": VERDE_MATRIZ, "fontWeight": "bold", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": "1px solid #e5e7eb"}),
             ]))
 
