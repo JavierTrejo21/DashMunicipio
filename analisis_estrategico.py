@@ -62,8 +62,17 @@ def analizar_datos_estrategicos(nombre_archivo, df):
     # ---------------------------------------------------------------------
 
     # Si el archivo seleccionado se encuentra en nuestro mapa de soluciones
-    if nombre_archivo in MAPEO_ANALISIS:
-        func_analisis = MAPEO_ANALISIS[nombre_archivo]
+    func_analisis = MAPEO_ANALISIS.get(nombre_archivo)
+
+    # Respaldo: si no hubo coincidencia exacta, normaliza separadores comunes
+    # (p. ej. "3.2 · LICENCIAS Y REGLAMENTOS" -> "3.2 LICENCIAS Y REGLAMENTOS")
+    # y reintenta, para no depender de que el menú de navegación use siempre
+    # el mismo formato de etiqueta que las claves de este diccionario.
+    if func_analisis is None and isinstance(nombre_archivo, str):
+        nombre_normalizado = " ".join(nombre_archivo.replace("·", " ").split())
+        func_analisis = MAPEO_ANALISIS.get(nombre_normalizado)
+
+    if func_analisis is not None:
         try:
             # Ejecuta la función específica devolviendo el layout envuelto con la colorimetría estructurada (#781d37, #920d24, #1ca2a9)
             contenido_grafico = func_analisis(df)
@@ -288,6 +297,7 @@ MAPEO_ANALISIS = {
     "3_2_LICENCIAS_Y_REGLAMENTOS": analizar_licencias_reglamentos,
     "LICENCIAS_Y_REGLAMENTOS": analizar_licencias_reglamentos,
     "3.2 LICENCIAS Y REGLAMENTOS": analizar_licencias_reglamentos,
+    "3.2 · LICENCIAS Y REGLAMENTOS": analizar_licencias_reglamentos,
     "3.2 LICENCIAS Y REGLAMENTOS.xlsx - Hoja1": analizar_licencias_reglamentos,
     "3.2 LICENCIAS Y REGLAMENTOS.xlsx - Hoja1.csv": (
         analizar_licencias_reglamentos

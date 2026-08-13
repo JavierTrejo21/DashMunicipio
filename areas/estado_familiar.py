@@ -4,13 +4,90 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
-# Colorimetría institucional Matriz
-VERDE_MATRIZ = "#115e59"      # Verde petróleo principal 
-GUINDA_MATRIZ = "#691c32"     # Guinda institucional
-TEXTO_DARK = "#1f2937"
-TEXTO_SECUNDARIO = "#374151"  
-TEXTO_MUTED_OSCURO = "#4b5563"
-GRIS_CLARO = "#f9fafb"
+# ==========================================================
+# PALETA INSTITUCIONAL DEL SISTEMA (misma que bibliotecas.py)
+# ==========================================================
+GUINDA = "#781D37"
+GUINDA_DARK = "#54132A"
+GUINDA_LIGHT = "#F3E7EB"
+VERDE = "#1CA2A9"
+VERDE_DARK = "#147880"
+VERDE_LIGHT = "#E3F5F6"
+BG = "#EFEDE6"
+CARD = "#FFFFFF"
+INK = "#241E1B"
+INK_SOFT = "#6B625C"
+INK_FAINT = "#9B928C"
+LINE = "#E3DDD2"
+
+FONT_SANS = "'Inter', sans-serif"
+FONT_SERIF = "'Playfair Display', serif"
+
+
+# ==========================================================
+# BLOQUES DE LAYOUT (idénticos a los usados en bibliotecas.py)
+# ==========================================================
+
+def _fuentes_e_iconos():
+    """Google Fonts + Tabler Icons, misma fuente tipográfica del sistema."""
+    return html.Div([
+        html.Link(rel="preconnect", href="https://fonts.googleapis.com"),
+        html.Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"),
+        html.Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css"),
+    ])
+
+
+def _section_label(icono, texto):
+    return html.Div([
+        html.I(className=f"ti {icono}", style={"color": VERDE, "fontSize": "16px"}),
+        html.Span(texto, style={
+            "fontFamily": FONT_SERIF, "fontWeight": "700", "fontSize": "14px",
+            "letterSpacing": ".04em", "color": GUINDA_DARK, "textTransform": "uppercase", "whiteSpace": "nowrap"
+        }),
+        html.Div(style={"flex": "1", "height": "1px", "background": LINE}),
+    ], style={"display": "flex", "alignItems": "center", "gap": "9px", "margin": "22px 0 16px"})
+
+
+def _kpi_card(icono, eyebrow, valor, sub, color=VERDE):
+    color_light = VERDE_LIGHT if color == VERDE else GUINDA_LIGHT
+    color_dark = VERDE_DARK if color == VERDE else GUINDA_DARK
+    return html.Div([
+        html.Div([
+            html.Div(
+                html.Div(html.I(className=f"ti {icono}"), style={
+                    "width": "100%", "height": "100%", "borderRadius": "50%", "background": color_light,
+                    "display": "flex", "alignItems": "center", "justifyContent": "center",
+                    "fontSize": "20px", "color": color_dark, "border": "1px solid #fff"
+                }),
+                style={
+                    "width": "50px", "height": "50px", "borderRadius": "50%", "flexShrink": "0", "padding": "3px",
+                    "background": f"conic-gradient({color} 100%, {LINE} 0)"
+                }
+            ),
+            html.Div([
+                html.Div(eyebrow, style={
+                    "fontSize": "9.5px", "fontWeight": "700", "letterSpacing": ".08em",
+                    "color": INK_FAINT, "textTransform": "uppercase", "marginBottom": "3px"
+                }),
+                html.Div(valor, style={"fontWeight": "700", "fontSize": "17px", "lineHeight": "1.25", "color": INK}),
+                html.Div(sub, style={"fontSize": "10.5px", "color": INK_SOFT, "marginTop": "3px"}) if sub else None,
+            ], style={"flex": "1", "minWidth": "0"}),
+        ], style={"display": "flex", "alignItems": "center", "gap": "14px"}),
+    ], style={
+        "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px", "position": "relative",
+        "padding": "18px 20px", "boxShadow": "0 1px 2px rgba(84,19,42,.05)",
+        "borderTop": f"3px solid {color}", "height": "100%", "boxSizing": "border-box"
+    })
+
+
+def _chart_panel(titulo, fig, color_top=GUINDA):
+    return html.Div([
+        html.Div(titulo, style={"fontSize": "11px", "fontWeight": "700", "letterSpacing": ".03em",
+                                 "textTransform": "uppercase", "color": INK_SOFT, "marginBottom": "10px"}),
+        dcc.Graph(figure=fig, config={"displayModeBar": False, "responsive": True}, style={"width": "100%"}),
+    ], style={"background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+               "borderTop": f"3px solid {color_top}", "padding": "16px 18px 8px", "overflow": "hidden"})
+
 
 def analizar_estado_familiar(df):
     """
@@ -50,84 +127,73 @@ def analizar_estado_familiar(df):
         # =================================================================
         total_nacimientos = df_ef[df_ef[col_actividad].str.contains("nacimiento", case=False, na=False)][col_cantidad_sistema].sum()
         total_asesorias = df_ef[df_ef[col_actividad].str.contains("asesoria|aseroria", case=False, na=False)][col_cantidad_sistema].sum()
-        
+
         # Actos solemnes y civiles (matrimonios, defunciones, divorcios)
         total_civiles = df_ef[df_ef[col_actividad].str.contains("matrimonio|defuncion|divorcio", case=False, na=False)][col_cantidad_sistema].sum()
-        
+
         total_atenciones = df_ef[col_cantidad_sistema].sum()
 
         # =================================================================
-        # 4. DISEÑO DE TARJETAS EN CUADRÍCULA 2x2
+        # 4. TARJETAS KPI (estilo institucional: badge-ring + borde superior)
         # =================================================================
-        def crear_tarjeta_kpi(titulo, valor, subtitulo, color_borde, color_valor):
-            return html.Div([
-                html.Div(titulo, style={"fontSize": "9px", "fontWeight": "700", "color": TEXTO_MUTED_OSCURO, "letterSpacing": "0.5px", "marginBottom": "2px"}),
-                html.H4(valor, style={"margin": "2px 0", "fontWeight": "bold", "color": color_valor, "fontSize": "18px"}),
-                html.Div(subtitulo, style={"fontSize": "9px", "color": TEXTO_MUTED_OSCURO, "fontWeight": "500"})
-            ], style={
-                "borderRadius": "8px",
-                "boxShadow": "0 1px 3px rgba(0,0,0,0.04)",
-                "border": "1px solid #eef2f5",
-                "borderLeft": f"5px solid {color_borde}",
-                "backgroundColor": "#ffffff",
-                "padding": "12px 16px",
-                "height": "100%"
-            })
-
-        cuadrícula_kpis = html.Div([
-            html.Div("CUADRO DE MANDO - REGISTRO DEL ESTADO FAMILIAR", 
-                     style={"fontSize": "11px", "fontWeight": "700", "color": GUINDA_MATRIZ, "marginBottom": "12px", "letterSpacing": "0.8px"}),
-            
-            dbc.Row([
-                dbc.Col(crear_tarjeta_kpi("👶 ACTAS Y REGISTROS DE NACIMIENTO", f"{int(total_nacimientos):,} trámites", "Certeza jurídica inicial", VERDE_MATRIZ, VERDE_MATRIZ), width=12, md=6, className="mb-2"),
-                dbc.Col(crear_tarjeta_kpi("⚖️ ASESORÍAS JURÍDICAS REGISTRALES", f"{int(total_asesorias):,} atenciones", "Orientación a la ciudadanía", GUINDA_MATRIZ, GUINDA_MATRIZ), width=12, md=6, className="mb-2"),
-            ], className="g-2"),
-
-            dbc.Row([
-                dbc.Col(crear_tarjeta_kpi("💍 ACTOS CIVILES (MATRIMONIOS/DEFUNCIONES)", f"{int(total_civiles):,} registros", "Eventos vitales del municipio", VERDE_MATRIZ, VERDE_MATRIZ), width=12, md=6, className="mb-2"),
-                dbc.Col(crear_tarjeta_kpi("⚡ TOTAL GENERAL DE ATENCIONES", f"{int(total_atenciones):,} acciones", "Impacto operativo del periodo", TEXTO_DARK, TEXTO_DARK), width=12, md=6, className="mb-2"),
-            ], className="g-2")
+        kpis_row = dbc.Row([
+            dbc.Col(_kpi_card("ti-file-certificate", "Actas y registros de nacimiento", f"{int(total_nacimientos):,} trámites", "Certeza jurídica inicial", VERDE), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-scale", "Asesorías jurídicas registrales", f"{int(total_asesorias):,} atenciones", "Orientación a la ciudadanía", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-heart", "Actos civiles (matrimonios/defunciones)", f"{int(total_civiles):,} registros", "Eventos vitales del municipio", VERDE), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-bolt", "Total general de atenciones", f"{int(total_atenciones):,} acciones", "Impacto operativo del periodo", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
         ])
 
         # =================================================================
-        # 5. CONSTRUCCIÓN DE LA TABLA (Con scroll vertical y sin ceros)
+        # 5. TABLA DE DETALLE (estilo institucional: header guinda, borde superior verde)
         # =================================================================
         df_resumen = df_ef.groupby([col_actividad])[col_cantidad_sistema].sum().reset_index()
         df_resumen = df_resumen[df_resumen[col_cantidad_sistema] > 0]
         df_resumen = df_resumen.sort_values(by=col_cantidad_sistema, ascending=False)
 
+        th_style = {"fontSize": "10.5px", "color": "#fff", "textAlign": "left", "padding": "10px 14px",
+                    "fontWeight": "700", "letterSpacing": ".04em", "textTransform": "uppercase",
+                    "backgroundColor": GUINDA_DARK, "borderBottom": f"1px solid {LINE}"}
+        td_style = {"fontSize": "12.5px", "color": INK, "padding": "10px 14px", "borderBottom": f"1px solid {LINE}"}
+
         filas_tabla = []
-        for _, r in df_resumen.iterrows():
+        for i, (_, r) in enumerate(df_resumen.iterrows()):
+            bg = "#FAF8F4" if i % 2 == 1 else CARD
             filas_tabla.append(html.Tr([
-                html.Td(r[col_actividad], style={"fontSize": "11px", "color": TEXTO_DARK, "textAlign": "left", "padding": "8px 14px", "fontWeight": "500", "backgroundColor": "#ffffff", "border": "1px solid #e5e7eb"}),
-                html.Td("Dirección del Estado Familiar", style={"fontSize": "11px", "color": TEXTO_SECUNDARIO, "fontWeight": "500", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "left", "border": "1px solid #e5e7eb"}),
-                html.Td(f"{r[col_cantidad_sistema]:,.0f}", style={"fontSize": "11px", "color": VERDE_MATRIZ, "fontWeight": "bold", "padding": "8px 14px", "backgroundColor": "#ffffff", "textAlign": "center", "border": "1px solid #e5e7eb"}),
+                html.Td(r[col_actividad], style={**td_style, "backgroundColor": bg, "fontWeight": "600"}),
+                html.Td("Dirección del Estado Familiar", style={**td_style, "backgroundColor": bg}),
+                html.Td(f"{r[col_cantidad_sistema]:,.0f}", style={**td_style, "backgroundColor": bg, "textAlign": "center", "fontWeight": "700", "color": GUINDA_DARK}),
             ]))
 
         fila_total = html.Tr([
-            html.Td("TOTAL GENERAL DE TÉRMINOS Y TRÁMITES REGISTRALES", style={"fontSize": "11px", "fontWeight": "bold", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "backgroundColor": GUINDA_MATRIZ, "border": f"1px solid {GUINDA_MATRIZ}"}),
-            html.Td("Consolidado Anual del Área", style={"fontSize": "11px", "fontWeight": "bold", "color": "#ffffff", "textAlign": "left", "padding": "10px 14px", "backgroundColor": GUINDA_MATRIZ, "border": f"1px solid {GUINDA_MATRIZ}"}),
-            html.Td(f"{int(total_atenciones):,}", style={"fontSize": "11px", "fontWeight": "bold", "color": "#ffffff", "backgroundColor": GUINDA_MATRIZ, "textAlign": "center", "border": f"1px solid {GUINDA_MATRIZ}"}),
+            html.Td("TOTAL GENERAL DE TÉRMINOS Y TRÁMITES REGISTRALES", style={**td_style, "fontWeight": "700", "color": "#fff", "backgroundColor": VERDE_DARK}),
+            html.Td("Consolidado Anual del Área", style={**td_style, "fontWeight": "700", "color": "#fff", "backgroundColor": VERDE_DARK}),
+            html.Td(f"{int(total_atenciones):,}", style={**td_style, "fontWeight": "700", "color": "#fff", "backgroundColor": GUINDA, "textAlign": "center"}),
         ])
 
+        th_sticky = {**th_style, "position": "sticky", "top": "0", "zIndex": "1"}
+
         tabla_layout = html.Div([
-            html.Div("BALANCE ANUAL DE TRÁMITES - REGISTRO DEL ESTADO FAMILIAR", 
-                     style={"padding": "12px 14px", "fontWeight": "bold", "backgroundColor": VERDE_MATRIZ, "color": "white", "borderTopLeftRadius": "8px", "borderTopRightRadius": "8px", "fontSize": "0.85rem"}),
+            # Encabezado fijo
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th("Trámite / Actividad Registrada", style={**th_sticky, "width": "50%"}),
+                    html.Th("Área de Adscripción", style={**th_sticky, "width": "35%"}),
+                    html.Th("Total Absoluto", style={**th_sticky, "textAlign": "center", "width": "15%", "backgroundColor": GUINDA}),
+                ])),
+            ], style={"width": "100%", "margin": "0", "borderCollapse": "collapse"}),
+            # Cuerpo con scroll
             html.Div(
                 html.Table([
-                    html.Thead(html.Tr([
-                        html.Th("Trámite / Actividad Registrada", style={"fontSize": "10px", "color": TEXTO_DARK, "textAlign": "left", "padding": "10px 14px", "fontWeight": "bold", "backgroundColor": GRIS_CLARO, "border": "1px solid #e5e7eb", "width": "50%", "position": "sticky", "top": "0", "zIndex": "1"}),
-                        html.Th("Área de Adscripción", style={"fontSize": "10px", "color": TEXTO_DARK, "textAlign": "left", "padding": "10px 14px", "fontWeight": "bold", "backgroundColor": GRIS_CLARO, "border": "1px solid #e5e7eb", "width": "35%", "position": "sticky", "top": "0", "zIndex": "1"}),
-                        html.Th("Total Absoluto", style={"fontSize": "10px", "color": TEXTO_DARK, "padding": "10px 14px", "fontWeight": "bold", "backgroundColor": GRIS_CLARO, "border": "1px solid #e5e7eb", "textAlign": "center", "width": "15%", "position": "sticky", "top": "0", "zIndex": "1"}),
-                    ])),
                     html.Tbody(filas_tabla)
-                ], 
-                style={"width": "100%", "margin": "0", "borderCollapse": "collapse", "backgroundColor": "#ffffff"}
-                ),
-                style={"maxHeight": "320px", "overflowY": "auto", "padding": "0px"}
+                ], style={"width": "100%", "margin": "0", "borderCollapse": "collapse"}),
+                style={"maxHeight": "320px", "overflowY": "auto"}
             ),
-            html.Table([html.Tbody([fila_total])], style={"width": "100%", "margin": "0", "borderCollapse": "collapse"})
-        ], style={"border": "1px solid #e5e7eb", "borderRadius": "8px", "marginTop": "16px", "backgroundColor": "#ffffff", "overflow": "hidden"})
+            # Fila de totales siempre visible
+            html.Table([
+                html.Tbody([fila_total])
+            ], style={"width": "100%", "margin": "0", "borderCollapse": "collapse"}),
+        ], style={"background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+                  "borderTop": f"3px solid {VERDE}", "overflow": "hidden"})
 
         # =================================================================
         # 6. GRÁFICA INFERIOR: LÍNEAS CON MARCADORES (TENDENCIA MENSUAL)
@@ -143,34 +209,36 @@ def analizar_estado_familiar(df):
             fig_tendencia = px.line(
                 df_tendencia, x=col_mes, y=col_cantidad_sistema,
                 markers=True,
-                color_discrete_sequence=[VERDE_MATRIZ],
+                color_discrete_sequence=[GUINDA],
                 labels={col_cantidad_sistema: "Volumen Total", col_mes: ""}
             )
             fig_tendencia.update_traces(line=dict(width=3), marker=dict(size=8))
             fig_tendencia.update_layout(
-                margin=dict(l=40, r=15, t=15, b=30),
+                margin=dict(l=40, r=15, t=10, b=15),
                 plot_bgcolor="white",
                 paper_bgcolor="white",
                 height=280,
-                yaxis={'gridcolor': '#f0f0f0'},
-                xaxis=dict(tickangle=0, categoryorder='array', categoryarray=orden_meses),
+                yaxis={'gridcolor': '#f0f0f0', 'tickfont': dict(color=INK_SOFT)},
+                xaxis=dict(tickangle=0, categoryorder='array', categoryarray=orden_meses, tickfont=dict(color=INK_SOFT)),
+                font=dict(family="Inter, sans-serif")
             )
-            seccion_grafica = html.Div([
-                html.Div("DINÁMICA MENSUAL DE ATENCIONES Y TRÁMITES REGISTRALES", 
-                         style={"padding": "12px 14px", "fontWeight": "bold", "backgroundColor": GUINDA_MATRIZ, "color": "white", "borderTopLeftRadius": "8px", "borderTopRightRadius": "8px", "fontSize": "0.85rem"}),
-                html.Div(dcc.Graph(figure=fig_tendencia, config={'displayModeBar': False}), style={"padding": "10px"})
-            ], className="border shadow-sm mt-3", style={"borderRadius": "8px", "backgroundColor": "#ffffff"})
+            seccion_grafica = _chart_panel("Dinámica mensual de atenciones y trámites registrales", fig_tendencia, color_top=GUINDA)
         else:
-            seccion_grafica = html.Div("ℹ️ No hay registros suficientes para estructurar el histórico mensual.", style={"padding": "20px", "color": "#a0aec0", "fontSize": "12px"})
+            seccion_grafica = html.Div("ℹ️ No hay registros suficientes para estructurar el histórico mensual.",
+                                        style={"padding": "20px", "color": INK_FAINT, "fontSize": "12px"})
 
         # =================================================================
         # 7. LAYOUT CONSOLIDADO FINAL
         # =================================================================
         return html.Div([
-            cuadrícula_kpis,   
-            tabla_layout,      
-            seccion_grafica    
-        ], style={"padding": "5px"})
+            _fuentes_e_iconos(),
+            _section_label("ti-chart-bar", "Resumen general"),
+            kpis_row,
+            _section_label("ti-table", "Balance anual de trámites"),
+            tabla_layout,
+            _section_label("ti-chart-line", "Tendencia mensual"),
+            seccion_grafica,
+        ], style={"background": BG, "fontFamily": FONT_SANS, "color": INK, "padding": "5px"})
 
     except Exception as e:
         return dbc.Alert(f"❌ Error al estructurar el cuadro de mando de Registro del Estado Familiar: {str(e)}", color="danger", className="m-3")
