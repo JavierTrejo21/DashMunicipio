@@ -97,7 +97,11 @@ def _chart_panel(titulo, fig, color_top=GUINDA):
                "borderTop": f"3px solid {color_top}", "padding": "16px 18px 8px", "overflow": "hidden"})
 
 
-def _rubro_card(nombre_rubro, monto_rubro, ben_rubro, color=GUINDA):
+def _rubro_card(nombre_rubro, pct_inversion, ben_rubro, pct_beneficiarios, color=GUINDA):
+    """
+    Tarjeta de rubro modificada: Muestra el porcentaje global de inversión del rubro
+    y los beneficiarios totales en relación con el total general.
+    """
     return html.Div([
         html.Div([
             html.I(className="ti ti-tag", style={"color": color, "fontSize": "14px"}),
@@ -109,12 +113,12 @@ def _rubro_card(nombre_rubro, monto_rubro, ben_rubro, color=GUINDA):
             "display": "flex", "alignItems": "center", "paddingBottom": "10px",
             "marginBottom": "10px", "borderBottom": f"1px solid {LINE}"
         }),
-        html.Div(f"${monto_rubro:,.2f}", style={
-            "fontWeight": "700", "fontSize": "16px", "color": color, "marginBottom": "4px"
+        html.Div(f"{pct_inversion:.1f}% de Inversión", style={
+            "fontWeight": "700", "fontSize": "15px", "color": color, "marginBottom": "6px"
         }),
         html.Div([
             html.I(className="ti ti-users", style={"color": INK_FAINT, "fontSize": "12px"}),
-            html.Span(f" Beneficiarios: {ben_rubro:,.0f} civ.", style={
+            html.Span(f" {ben_rubro:,.0f} civ. ({pct_beneficiarios:.1f}% del total)", style={
                 "fontSize": "10.5px", "color": INK_SOFT, "marginLeft": "4px"
             }),
         ]),
@@ -148,7 +152,7 @@ def analizar_recepcion_presidenta(df):
         col_comunidad = next((c for c in df_rec.columns if "COMUNIDAD" in c or "LOCALIDAD" in c or "MUNICIPIO" in c), None)
         col_mes = next((c for c in df_rec.columns if "MES" in c or "FECHA" in c), None)
 
-        # Limpieza numérica robusta para recurso y beneficiarios
+        # Limpieza numérica robusta
         if col_recurso:
             df_rec[col_recurso] = pd.to_numeric(
                 df_rec[col_recurso].astype(str).str.replace(r"[^\d.]", "", regex=True),
@@ -167,17 +171,11 @@ def analizar_recepcion_presidenta(df):
             df_rec["__BENEFICIARIOS__"] = 0
             col_beneficiarios = "__BENEFICIARIOS__"
 
-        # Normalizar texto de comunidad para evitar duplicados por espacios (ej. "CHAPULHUACAN " vs "CHAPULHUACAN")
         if col_comunidad:
             df_rec[col_comunidad] = df_rec[col_comunidad].apply(limpiar_texto)
 
-        # =================================================================
-        # CONTROL DE BENEFICIARIOS (Evitar inflar el número por repetición)
-        # =================================================================
-        # Si una comunidad aparece múltiples veces con la misma cantidad exacta de beneficiarios 
-        # o eventos similares, aplicamos una agregación inteligente (ej. max por evento/comunidad o suma única de alcance)
+        # Control de beneficiarios unificados por comunidad y rubro
         if col_comunidad:
-            # Agrupamos por comunidad y categoría para sumar de forma limpia y evitar duplicidades forzadas
             df_beneficiarios_unicos = df_rec.groupby([col_comunidad, col_rubro], as_index=False)[col_beneficiarios].max()
             beneficiarios_totales = df_beneficiarios_unicos[col_beneficiarios].sum()
         else:
@@ -187,9 +185,7 @@ def analizar_recepcion_presidenta(df):
         gestiones_atendidas = len(df_rec)
         comunidades_atendidas = df_rec[col_comunidad].nunique() if col_comunidad else 0
 
-        # =================================================================
-        # TARJETAS KPI (Recurso entregado en lugar de inversión)
-        # =================================================================
+        # Tarjetas KPI principales
         kpis_row = dbc.Row([
             dbc.Col(_kpi_card("ti-cash", "Recurso entregado", f"${recurso_total:,.2f}", "Apoyo poblacional", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
             dbc.Col(_kpi_card("ti-users", "Beneficiarios atendidos", f"{beneficiarios_totales:,.0f} civ.", "Alcance depurado", VERDE), width=12, sm=6, lg=3, className="mb-3"),
@@ -203,17 +199,18 @@ def analizar_recepcion_presidenta(df):
             col_beneficiarios: 'sum'
         }).sort_values(by=col_recurso, ascending=False)
 
-        total_rec_val = df_rubros[col_recurso].sum() if recurso_total > 0 else 1
-        df_rubros['PORCENTAJE'] = (df_rubros[col_recurso] / total_rec_val) * 100
+        total_rec_val = recurso_total if recurso_total > 0 else 1
+        total_ben_val = beneficiarios_totales if beneficiarios_totales > 0 else 1
 
-        # =================================================================
-        # GRÁFICA DE BARRAS — DISTRIBUCIÓN POR RUBRO
-        # =================================================================
+        df_rubros['PORCENTAJE_INV'] = (df_rubros[col_recurso] / total_rec_val) * 100
+        df_rubros['PORCENTAJE_BEN'] = (df_rubros[col_beneficiarios] / total_ben_val) * 100
+
+        # Gráfica de barras
         fig_barras = px.bar(
             df_rubros,
             x=col_rubro,
             y=col_recurso,
-            text=df_rubros.apply(lambda r: f"{r['PORCENTAJE']:.1f}%<br>${r[col_recurso]:,.0f}", axis=1),
+            text=df_rubros.apply(lambda r: f"{r['PORCENTAJE_INV']:.1f}%<br>${r[col_recurso]:,.0f}", axis=1),
             color_discrete_sequence=[GUINDA],
             labels={col_recurso: "Recurso Entregado", col_rubro: ""}
         )
@@ -228,9 +225,7 @@ def analizar_recepcion_presidenta(df):
             font=dict(family="Inter, sans-serif")
         )
 
-        # =================================================================
-        # GRÁFICA DE LÍNEA — HISTÓRICO MENSUAL DE RECURSO
-        # =================================================================
+        # Gráfica de línea (Histórico mensual)
         if col_mes and not df_rec[col_mes].isna().all():
             df_meses = df_rec.groupby(col_mes, as_index=False)[col_recurso].sum()
         else:
@@ -265,33 +260,30 @@ def analizar_recepcion_presidenta(df):
             dbc.Col(_chart_panel("Histórico mensual de entrega de recursos", fig_linea, color_top=VERDE), md=5, className="mb-3"),
         ])
 
-        # =================================================================
-        # TARJETAS INFERIORES — DESGLOSE POR RUBRO
-        # =================================================================
+        # Tarjetas inferiores — Desglose por rubro actualizado (Solo % inversión y beneficiarios totales)
         tarjetas_rubros_cols = []
         for i, (_, row) in enumerate(df_rubros.iterrows()):
             nombre_rubro = str(row[col_rubro])
-            monto_rubro = row[col_recurso]
+            pct_inv = row['PORCENTAJE_INV']
             ben_rubro = row[col_beneficiarios]
+            pct_ben = row['PORCENTAJE_BEN']
             color_tarjeta = GUINDA if i % 2 == 0 else VERDE
 
             tarjetas_rubros_cols.append(
-                dbc.Col(_rubro_card(nombre_rubro, monto_rubro, ben_rubro, color_tarjeta),
+                dbc.Col(_rubro_card(nombre_rubro, pct_inv, ben_rubro, pct_ben, color_tarjeta),
                         width=12, sm=6, md=3, className="mb-3")
             )
 
         grid_tarjetas_rubros = dbc.Row(tarjetas_rubros_cols)
 
-        # =================================================================
-        # LAYOUT CONSOLIDADO FINAL
-        # =================================================================
+        # Layout consolidado final
         return html.Div([
             _fuentes_e_iconos(),
             _section_label("ti-chart-bar", "Resumen general de apoyos"),
             kpis_row,
             _section_label("ti-chart-area", "Comportamiento e histórico"),
             graficas_row,
-            _section_label("ti-list-details", "Desglose detallado por rubro"),
+            _section_label("ti-list-details", "Desglose porcentual y poblacional por rubro"),
             grid_tarjetas_rubros,
         ], style={"background": BG, "fontFamily": FONT_SANS, "color": INK, "padding": "5px"})
 
