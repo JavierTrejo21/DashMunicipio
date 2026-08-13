@@ -215,12 +215,12 @@ def register_navegacion_callbacks(app):
             except Exception:
                 resumen_mir = html.Div()
 
-            # --- VINCULACIÓN CON EL ENRUTADOR DE ANÁLISIS POR ÁREA ---
+                        # --- VINCULACIÓN CON EL ENRUTADOR DE ANÁLISIS POR ÁREA ---
             analisis_especifico = analizar_datos_estrategicos(tabla, df)
             if analisis_especifico is None or isinstance(analisis_especifico, dbc.Alert):
                 analisis_especifico = analizar_datos_estrategicos(nombre_completo, df)
 
-            if isinstance(analisis_especifico, dbc.Alert) and "aún no se ha configurado" in analisis_especifico.children:
+            if isinstance(analisis_especifico, dbc.Alert) and any(msg in str(analisis_especifico.children) for msg in ["aún no se ha configurado", "registrada correctamente"]):
                 analisis_especifico = html.Div()
 
             # Encabezado V4

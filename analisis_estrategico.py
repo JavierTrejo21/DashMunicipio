@@ -61,16 +61,26 @@ def analizar_datos_estrategicos(nombre_archivo, df):
         df = df[df.astype(str).apply(lambda x: ''.join([str(v) for v in x if pd.notna(v)]).strip() != '', axis=1)]
     # ---------------------------------------------------------------------
 
-    # Si el archivo seleccionado se encuentra en nuestro mapa de soluciones
+        # Si el archivo seleccionado se encuentra en nuestro mapa de soluciones
     func_analisis = MAPEO_ANALISIS.get(nombre_archivo)
 
-    # Respaldo: si no hubo coincidencia exacta, normaliza separadores comunes
-    # (p. ej. "3.2 · LICENCIAS Y REGLAMENTOS" -> "3.2 LICENCIAS Y REGLAMENTOS")
-    # y reintenta, para no depender de que el menú de navegación use siempre
-    # el mismo formato de etiqueta que las claves de este diccionario.
+    # REFUERZO DE BÚSQUEDA: Si no hay coincidencia, normalizar agresivamente para encontrar en el mapeo
     if func_analisis is None and isinstance(nombre_archivo, str):
-        nombre_normalizado = " ".join(nombre_archivo.replace("·", " ").split())
-        func_analisis = MAPEO_ANALISIS.get(nombre_normalizado)
+        import unicodedata
+        import re
+        def norm_key(s):
+            # Quitar acentos, reemplazar no-alfanuméricos por _, colapsar _ y pasar a Mayúsculas
+            s = "".join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+            s = re.sub(r'[^a-zA-Z0-9]', '_', s).upper()
+            return re.sub(r'_+', '_', s).strip('_')
+        
+        nombre_norm = norm_key(nombre_archivo)
+        func_analisis = MAPEO_ANALISIS.get(nombre_norm)
+        
+        # Reintento con normalización simple por si acaso
+        if func_analisis is None:
+            nombre_simple = " ".join(nombre_archivo.replace("·", " ").split())
+            func_analisis = MAPEO_ANALISIS.get(nombre_simple)
 
     if func_analisis is not None:
         try:

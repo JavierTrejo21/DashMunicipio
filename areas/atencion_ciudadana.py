@@ -5,24 +5,105 @@ import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
 
-# Colores institucionales del municipio
-GUINDA_INST = "#691c32"
-DORADO_INST = "#bc955c"
-TEXTO_DARK = "#1f2937"
-GRIS_LIGHT = "#f8f9fa"
-GRIS_BORDES = "#e5e7eb"
+# ==========================================================
+# PALETA INSTITUCIONAL DEL SISTEMA (misma que bibliotecas.py)
+# ==========================================================
+GUINDA = "#781D37"
+GUINDA_DARK = "#54132A"
+GUINDA_LIGHT = "#F3E7EB"
+VERDE = "#1CA2A9"
+VERDE_DARK = "#147880"
+VERDE_LIGHT = "#E3F5F6"
+BG = "#EFEDE6"
+CARD = "#FFFFFF"
+INK = "#241E1B"
+INK_SOFT = "#6B625C"
+INK_FAINT = "#9B928C"
+LINE = "#E3DDD2"
+
+FONT_SANS = "'Inter', sans-serif"
+FONT_SERIF = "'Playfair Display', serif"
 
 # Orden cronológico oficial para la secuencia de meses
 ORDEN_MESES = [
-    "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+    "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
     "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
 ]
 
+
+# ==========================================================
+# BLOQUES DE LAYOUT (idénticos a los usados en bibliotecas.py)
+# ==========================================================
+
+def _fuentes_e_iconos():
+    return html.Div([
+        html.Link(rel="preconnect", href="https://fonts.googleapis.com"),
+        html.Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"),
+        html.Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css"),
+    ])
+
+
+def _section_label(icono, texto):
+    return html.Div([
+        html.I(className=f"ti {icono}", style={"color": VERDE, "fontSize": "16px"}),
+        html.Span(texto, style={
+            "fontFamily": FONT_SERIF, "fontWeight": "700", "fontSize": "14px",
+            "letterSpacing": ".04em", "color": GUINDA_DARK, "textTransform": "uppercase", "whiteSpace": "nowrap"
+        }),
+        html.Div(style={"flex": "1", "height": "1px", "background": LINE}),
+    ], style={"display": "flex", "alignItems": "center", "gap": "9px", "margin": "22px 0 16px"})
+
+
+def _kpi_card(icono, eyebrow, valor, sub, color=VERDE):
+    color_light = VERDE_LIGHT if color == VERDE else GUINDA_LIGHT
+    color_dark = VERDE_DARK if color == VERDE else GUINDA_DARK
+    return html.Div([
+        html.Div([
+            html.Div(
+                html.Div(html.I(className=f"ti {icono}"), style={
+                    "width": "100%", "height": "100%", "borderRadius": "50%", "background": color_light,
+                    "display": "flex", "alignItems": "center", "justifyContent": "center",
+                    "fontSize": "20px", "color": color_dark, "border": "1px solid #fff"
+                }),
+                style={
+                    "width": "50px", "height": "50px", "borderRadius": "50%", "flexShrink": "0", "padding": "3px",
+                    "background": f"conic-gradient({color} 100%, {LINE} 0)"
+                }
+            ),
+            html.Div([
+                html.Div(eyebrow, style={
+                    "fontSize": "9.5px", "fontWeight": "700", "letterSpacing": ".08em",
+                    "color": INK_FAINT, "textTransform": "uppercase", "marginBottom": "3px"
+                }),
+                html.Div(valor, style={"fontWeight": "700", "fontSize": "17px", "lineHeight": "1.25", "color": INK}),
+                html.Div(sub, style={"fontSize": "10.5px", "color": INK_SOFT, "marginTop": "3px"}) if sub else None,
+            ], style={"flex": "1", "minWidth": "0"}),
+        ], style={"display": "flex", "alignItems": "center", "gap": "14px"}),
+    ], style={
+        "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px", "position": "relative",
+        "padding": "18px 20px", "boxShadow": "0 1px 2px rgba(84,19,42,.05)",
+        "borderTop": f"3px solid {color}", "height": "100%", "boxSizing": "border-box"
+    })
+
+
+def _chart_panel(titulo, contenido, color_top=GUINDA):
+    return html.Div([
+        html.Div(titulo, style={
+            "fontSize": "11px", "fontWeight": "700", "letterSpacing": ".03em",
+            "textTransform": "uppercase", "color": INK_SOFT, "marginBottom": "10px"
+        }),
+        contenido,
+    ], style={
+        "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+        "borderTop": f"3px solid {color_top}", "padding": "16px 18px 12px", "overflow": "hidden"
+    })
+
+
 def analizar_atencion_ciudadana(df):
     """
-    Módulo analítico premium para el área de 5.4 Atención Ciudadana.
-    Presenta la distribución por áreas mediante un Treemap con paleta semafórica,
-    tarjetas de indicadores estilo referencia y tabla/gráfica detallada.
+    Módulo analítico para el área de Atención Ciudadana.
+    Presenta distribución por áreas mediante Treemap con paleta semafórica,
+    tarjetas de indicadores, gráfica temporal y tabla detallada.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de Atención Ciudadana no contiene registros válidos o está vacío.", color="warning")
@@ -37,7 +118,6 @@ def analizar_atencion_ciudadana(df):
     col_atn = next((c for c in columnas_reales if "ATEN" in c or "ATEND" in c), "ATENDIDOS")
     col_act = next((c for c in columnas_reales if "ACT" in c), "ACTIVIDAD")
     col_var = next((c for c in columnas_reales if "VAR" in c or "AREA" in c), "VARIABLE")
-    col_con = next((c for c in columnas_reales if "CON" in c), "CONCEPTO")
 
     # --- LIMPIEZA RIGUROSA ---
     df_atc[col_atn] = pd.to_numeric(df_atc[col_atn], errors='coerce').fillna(0).astype(int)
@@ -45,76 +125,84 @@ def analizar_atencion_ciudadana(df):
     df_atc[col_act] = df_atc[col_act].fillna("SIN ESPECIFICAR").astype(str).str.strip()
     df_atc[col_mes] = df_atc[col_mes].fillna("S/M").astype(str).str.strip().str.upper()
 
-    # --- CÁLCULO DE MÉTRICAS GENERALES PARA EL RESUMEN ---
-    total_registros = len(df_atc)
+    # --- CÁLCULO DE MÉTRICAS ---
     total_atendidos = int(df_atc[col_atn].sum())
-    
-    # Agrupación por área/variable para el Treemap y métricas
     df_areas = df_atc.groupby(col_var)[col_atn].sum().reset_index()
     df_areas = df_areas.sort_values(by=col_atn, ascending=False)
-    
     area_mas_solicitada = df_areas.iloc[0][col_var] if not df_areas.empty else "N/D"
-    max_atendidos_area = int(df_areas.iloc[0][col_atn]) if not df_areas.empty else 0
 
-    # --- TARJETAS KPI ESTANDARIZADAS (CONTENEDOR Y TONO IDÉNTICOS A LA REFERENCIA) ---
-    estilo_contenedor_ref = {
-        "borderRadius": "10px", 
-        "border": "1px solid #cbd5e1", 
-        "backgroundColor": "#ffffff",
-        "boxShadow": "0 1px 3px rgba(0,0,0,0.02)"
+    # =================================================================
+    # KPI CARDS (estilo institucional: badge-ring + borde superior)
+    # =================================================================
+    kpis_row = dbc.Row([
+        dbc.Col(_kpi_card("ti-users", "Total de ciudadanos atendidos", f"{total_atendidos:,}", "Registros del periodo", VERDE), width=12, sm=6, className="mb-3"),
+        dbc.Col(_kpi_card("ti-star", "Área de mayor afluencia", area_mas_solicitada, "Departamento con más solicitudes", GUINDA), width=12, sm=6, className="mb-3"),
+    ])
+
+    # =================================================================
+    # TREEMAP (paleta semafórica institucional + animación original)
+    # =================================================================
+    # Animación CSS original preservada
+    estilos_animacion = dcc.Markdown("""
+<style>
+    @keyframes fadeInSlide {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
     }
+    .animar-entrada {
+        animation: fadeInSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+""", dangerously_allow_html=True)
 
-    tarjetas_kpi = dbc.Row([
-        dbc.Col(
-            html.Div([
-                html.Small("TOTAL DE CIUDADANOS ATENDIDOS", className="d-block text-muted mb-1", style={"fontSize": "0.62rem", "letterSpacing": "1px", "fontWeight": "700"}),
-                html.H3(f"{total_atendidos:,}", className="m-0", style={"color": "#1e293b", "fontSize": "1.25rem", "fontWeight": "700"})
-            ], className="p-3 h-100 d-flex flex-column justify-content-center", style=estilo_contenedor_ref), 
-            width=12, sm=6, className="mb-3"
-        ),
-        dbc.Col(
-            html.Div([
-                html.Small("ÁREA DE MAYOR AFLUENCIA", className="d-block text-muted mb-1", style={"fontSize": "0.62rem", "letterSpacing": "1px", "fontWeight": "700"}),
-                html.H3(f"{area_mas_solicitada}", className="m-0 text-truncate", style={"color": "#1e293b", "fontSize": "1.1rem", "fontWeight": "700"})
-            ], className="p-3 h-100 d-flex flex-column justify-content-center", style=estilo_contenedor_ref), 
-            width=12, sm=6, className="mb-3"
-        ),
-    ], className="mb-2")
-
-    # --- CONSTRUCCIÓN DEL TREEMAP SEMAFÓRICO ---
     fig_treemap = px.treemap(
         df_areas,
         path=[col_var],
         values=col_atn,
         color=col_atn,
         color_continuous_scale=[
-            [0.0, '#93c5fd'],      # Azul claro (baja afluencia)
-            [0.4, '#bc955c'],      # Dorado institucional (media afluencia)
-            [1.0, '#691c32']       # Guinda institucional (alta concentración)
+            [0.0, VERDE_LIGHT],
+            [0.4, VERDE],
+            [1.0, GUINDA],
         ],
         custom_data=[col_atn]
     )
-
     fig_treemap.update_traces(
         texttemplate="<b>%{label}</b><br>%{value:,} ciudadanos",
         textposition="middle center",
-        textfont=dict(size=15, family="Arial", color="white"),
+        textfont=dict(size=15, family="Inter, sans-serif", color="white"),
         hovertemplate="<b>Área:</b> %{label}<br><b>Ciudadanos Atendidos:</b> %{value:,}<extra></extra>"
     )
-
     fig_treemap.update_layout(
         margin=dict(l=10, r=10, t=10, b=10),
         coloraxis_colorbar=dict(
-            title=dict(text="Afluencia", font=dict(size=11, family="Arial")),
-            thickness=14,
-            len=0.85
+            title=dict(text="Afluencia", font=dict(size=11, family="Inter, sans-serif")),
+            thickness=14, len=0.85
         ),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        height=420
+        height=420,
+        font=dict(family="Inter, sans-serif")
     )
 
-    # --- GRÁFICA DE LÍNEA TEMPORAL MENSUAL ---
+    seccion_treemap = html.Div(
+        _chart_panel(
+            "Concentración y distribución de presencia ciudadana por departamento",
+            html.Div([
+                html.P(
+                    "Análisis volumétrico dimensional basado en registros de atención y audiencias ciudadanas.",
+                    style={"fontSize": "12px", "color": INK_SOFT, "textAlign": "center", "marginBottom": "8px"}
+                ),
+                dcc.Graph(figure=fig_treemap, config={'displayModeBar': False}),
+            ]),
+            color_top=GUINDA
+        ),
+        className="animar-entrada mb-3"
+    )
+
+    # =================================================================
+    # GRÁFICA DE LÍNEA TEMPORAL MENSUAL
+    # =================================================================
     fig_linea = go.Figure()
     df_meses = df_atc.groupby(col_mes)[col_atn].sum().reset_index()
     df_meses['orden'] = df_meses[col_mes].apply(lambda x: ORDEN_MESES.index(x) if x in ORDEN_MESES else 99)
@@ -125,99 +213,103 @@ def analizar_atencion_ciudadana(df):
             x=df_meses[col_mes],
             y=df_meses[col_atn],
             mode='lines+markers+text',
-            line=dict(color=GUINDA_INST, width=3, shape='spline'),
-            marker=dict(color=DORADO_INST, size=9, line=dict(width=2, color="white")),
+            line=dict(color=GUINDA, width=3, shape='spline'),
+            marker=dict(color=VERDE, size=9, line=dict(width=2, color="white")),
             text=df_meses[col_atn].apply(lambda x: f"<b>{int(x):,}</b>"),
             textposition="top center",
-            textfont=dict(size=10, color=TEXTO_DARK, family="Arial"),
+            textfont=dict(size=10, color=INK_SOFT, family="Inter, sans-serif"),
             fill='tozeroy',
-            fillcolor='rgba(105, 28, 50, 0.04)',
+            fillcolor=f'rgba(120, 29, 55, 0.06)',
             hovertemplate="<b>Mes:</b> %{x}<br><b>Atendidos:</b> %{y:,} ciudadanos<extra></extra>"
         ))
 
     fig_linea.update_layout(
-        margin=dict(l=20, r=20, t=30, b=20),
+        margin=dict(l=20, r=20, t=10, b=20),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         height=260,
-        xaxis=dict(showgrid=False, tickfont=dict(color=TEXTO_DARK, size=10, family="Arial")),
-        yaxis=dict(showgrid=True, gridcolor="#f3f4f6", showticklabels=False)
+        xaxis=dict(showgrid=False, tickfont=dict(color=INK_SOFT, size=10, family="Inter, sans-serif")),
+        yaxis=dict(showgrid=True, gridcolor=LINE, showticklabels=False),
+        font=dict(family="Inter, sans-serif")
     )
 
-    # --- TABLA DE DETALLE ---
+    seccion_linea = html.Div(
+        _chart_panel(
+            "Comportamiento histórico y fluctuación mensual de audiencias",
+            html.Div([
+                html.P(
+                    "Monitoreo temporal para identificar picos estacionales de solicitudes en el municipio.",
+                    style={"fontSize": "12px", "color": INK_SOFT, "textAlign": "center", "marginBottom": "8px"}
+                ),
+                dcc.Graph(figure=fig_linea, config={'displayModeBar': False}),
+            ]),
+            color_top=VERDE
+        ),
+        className="animar-entrada mb-3"
+    )
+
+    # =================================================================
+    # TABLA DETALLADA (estilo institucional + scroll vertical)
+    # =================================================================
     columnas_tabla = [
-        {"name": "Mes", "id": col_mes},
-        {"name": "Área / Dirección", "id": col_var},
-        {"name": "Actividad", "id": col_act},
-        {"name": "Ciudadanos Atendidos", "id": col_atn}
+        {"name": "Mes",                  "id": col_mes},
+        {"name": "Área / Dirección",     "id": col_var},
+        {"name": "Actividad",            "id": col_act},
+        {"name": "Ciudadanos Atendidos", "id": col_atn},
     ]
 
-    estilos_animacion = dcc.Markdown("""
-    <style>
-        @keyframes fadeInSlide {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .animar-entrada {
-            animation: fadeInSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-    </style>
-    """, dangerously_allow_html=True)
+    tabla_detalle = dash_table.DataTable(
+        data=df_atc.to_dict('records'),
+        columns=columnas_tabla,
+        page_size=8,
+        style_table={'overflowX': 'auto', 'overflowY': 'auto', 'maxHeight': '320px'},
+        style_header={
+            'backgroundColor': GUINDA_DARK,
+            'color': '#ffffff',
+            'fontWeight': '700',
+            'fontSize': '10.5px',
+            'letterSpacing': '.04em',
+            'textTransform': 'uppercase',
+            'textAlign': 'left',
+            'border': 'none',
+            'fontFamily': 'Inter, sans-serif',
+            'padding': '10px 14px',
+        },
+        style_cell={
+            'padding': '10px 14px',
+            'fontSize': '12px',
+            'fontFamily': 'Inter, sans-serif',
+            'color': INK,
+            'textAlign': 'left',
+            'borderBottom': f'1px solid {LINE}',
+            'backgroundColor': CARD,
+        },
+        style_data_conditional=[
+            {'if': {'row_index': 'odd'}, 'backgroundColor': '#FAF8F4'},
+        ],
+    )
 
-    # --- LAYOUT FINAL ---
+    seccion_tabla = html.Div(
+        _chart_panel(
+            "Registro detallado de atención ciudadana",
+            tabla_detalle,
+            color_top=GUINDA
+        ),
+        className="animar-entrada mb-3"
+    )
+
+    # =================================================================
+    # LAYOUT CONSOLIDADO FINAL
+    # =================================================================
     return html.Div([
+        _fuentes_e_iconos(),
         estilos_animacion,
-        tarjetas_kpi,
-        
-        # Fila del Treemap Dimensional
-        dbc.Row([
-            dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-grid-3x3-gap-fill me-2"), "CONCENTRACIÓN Y DISTRIBUCIÓN DE PRESENCIA CIUDADANA POR DEPARTAMENTO"], 
-                         style={'backgroundColor': '#691c32', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
-                html.Div([
-                    html.P("Análisis volumétrico dimensional basado en registros de atención y audiencias ciudadanas.", 
-                           className="text-center mb-2", 
-                           style={"fontSize": "1rem", "color": "#1f2937", "fontWeight": "500"}),
-                    dcc.Graph(figure=fig_treemap, config={'displayModeBar': False})
-                ], className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px"})
-            ], className="shadow-sm mb-4 animar-entrada"), md=12)
-        ]),
-
-        # Fila de Gráfica Temporal
-        dbc.Row([
-            dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-graph-up-arrow me-2"), "COMPORTAMIENTO HISTÓRICO Y FLUCTUACIÓN MENSUAL DE AUDIENCIAS"], 
-                         style={'backgroundColor': '#115e59', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
-                html.Div([
-                    html.P("Monitoreo temporal para identificar picos estacionales de solicitudes en el municipio.", 
-                           className="text-center mb-1", 
-                           style={"fontSize": "1rem", "color": "#1f2937", "fontWeight": "500"}),
-                    dcc.Graph(figure=fig_linea, config={'displayModeBar': False})
-                ], className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px"})
-            ], className="shadow-sm mb-4 animar-entrada"), md=12)
-        ]),
-
-        # Tabla Detallada
-        dbc.Row([
-            dbc.Col(html.Div([
-                html.Div([
-                    html.I(className="bi bi-table me-2", style={"color": "#bc955c"}),
-                    "REGISTRO DETALLADO DE ATENCIÓN CIUDADANA"
-                ], style={
-                    'backgroundColor': '#691c32', 'color': 'white', 'padding': '12px 16px', 
-                    'fontWeight': '700', 'fontSize': '0.8rem', 'borderRadius': '6px 6px 0 0'
-                }),
-                html.Div([
-                    dash_table.DataTable(
-                        data=df_atc.to_dict('records'),
-                        columns=columnas_tabla,
-                        page_size=6,
-                        style_table={'overflowX': 'auto'},
-                        style_header={'backgroundColor': '#f3f4f6', 'color': '#1f2937', 'fontWeight': 'bold', 'fontSize': '11px', 'textAlign': 'left', 'borderBottom': '2px solid #e5e7eb'},
-                        style_cell={'padding': '9px 8px', 'fontSize': '11px', 'fontFamily': 'sans-serif', 'textAlign': 'left', 'borderBottom': '1px solid #f3f4f6'},
-                        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#f9fafb'}]
-                    )
-                ], className="bg-white border border-top-0 p-2", style={'borderRadius': '0 0 6px 6px'})
-            ], className="shadow-sm mb-2 animar-entrada"), md=12)
-        ])
-    ], style={'padding': '5px'})
+        _section_label("ti-chart-bar", "Resumen general"),
+        kpis_row,
+        _section_label("ti-layout-grid", "Distribución por departamento"),
+        seccion_treemap,
+        _section_label("ti-chart-line", "Tendencia mensual"),
+        seccion_linea,
+        _section_label("ti-table", "Registro detallado"),
+        seccion_tabla,
+    ], style={"background": BG, "fontFamily": FONT_SANS, "color": INK, "padding": "5px"})

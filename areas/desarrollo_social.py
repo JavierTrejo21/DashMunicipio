@@ -1,14 +1,99 @@
 # areas/desarrollo_social.py
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
 
+# ==========================================================
+# PALETA INSTITUCIONAL DEL SISTEMA (misma que los demás módulos)
+# ==========================================================
+GUINDA = "#781D37"
+GUINDA_DARK = "#54132A"
+GUINDA_LIGHT = "#F3E7EB"
+VERDE = "#1CA2A9"
+VERDE_DARK = "#147880"
+VERDE_LIGHT = "#E3F5F6"
+BG = "#EFEDE6"
+CARD = "#FFFFFF"
+INK = "#241E1B"
+INK_SOFT = "#6B625C"
+INK_FAINT = "#9B928C"
+LINE = "#E3DDD2"
+
+FONT_SANS = "'Inter', sans-serif"
+FONT_SERIF = "'Playfair Display', serif"
+
+
+# ==========================================================
+# BLOQUES DE LAYOUT (idénticos a los usados en los demás módulos)
+# ==========================================================
+
+def _fuentes_e_iconos():
+    return html.Div([
+        html.Link(rel="preconnect", href="https://fonts.googleapis.com"),
+        html.Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"),
+        html.Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css"),
+    ])
+
+
+def _section_label(icono, texto):
+    return html.Div([
+        html.I(className=f"ti {icono}", style={"color": VERDE, "fontSize": "16px"}),
+        html.Span(texto, style={
+            "fontFamily": FONT_SERIF, "fontWeight": "700", "fontSize": "14px",
+            "letterSpacing": ".04em", "color": GUINDA_DARK, "textTransform": "uppercase", "whiteSpace": "nowrap"
+        }),
+        html.Div(style={"flex": "1", "height": "1px", "background": LINE}),
+    ], style={"display": "flex", "alignItems": "center", "gap": "9px", "margin": "22px 0 16px"})
+
+
+def _kpi_card(icono, eyebrow, valor, sub, color=VERDE):
+    color_light = VERDE_LIGHT if color == VERDE else GUINDA_LIGHT
+    color_dark = VERDE_DARK if color == VERDE else GUINDA_DARK
+    return html.Div([
+        html.Div([
+            html.Div(
+                html.Div(html.I(className=f"ti {icono}"), style={
+                    "width": "100%", "height": "100%", "borderRadius": "50%", "background": color_light,
+                    "display": "flex", "alignItems": "center", "justifyContent": "center",
+                    "fontSize": "20px", "color": color_dark, "border": "1px solid #fff"
+                }),
+                style={
+                    "width": "50px", "height": "50px", "borderRadius": "50%", "flexShrink": "0", "padding": "3px",
+                    "background": f"conic-gradient({color} 100%, {LINE} 0)"
+                }
+            ),
+            html.Div([
+                html.Div(eyebrow, style={
+                    "fontSize": "9.5px", "fontWeight": "700", "letterSpacing": ".08em",
+                    "color": INK_FAINT, "textTransform": "uppercase", "marginBottom": "3px"
+                }),
+                html.Div(valor, style={"fontWeight": "700", "fontSize": "16px", "lineHeight": "1.25", "color": INK, "wordBreak": "break-word"}),
+                html.Div(sub, style={"fontSize": "10.5px", "color": INK_SOFT, "marginTop": "3px"}) if sub else None,
+            ], style={"flex": "1", "minWidth": "0"}),
+        ], style={"display": "flex", "alignItems": "center", "gap": "14px"}),
+    ], style={
+        "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px", "position": "relative",
+        "padding": "18px 20px", "boxShadow": "0 1px 2px rgba(84,19,42,.05)",
+        "borderTop": f"3px solid {color}", "height": "100%", "boxSizing": "border-box"
+    })
+
+
+def _chart_panel(titulo, contenido, color_top=GUINDA):
+    return html.Div([
+        html.Div(titulo, style={"fontSize": "11px", "fontWeight": "700", "letterSpacing": ".03em",
+                                 "textTransform": "uppercase", "color": INK_SOFT, "marginBottom": "10px"}),
+        contenido,
+    ], style={"background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+               "borderTop": f"3px solid {color_top}", "padding": "16px 18px 12px", "overflow": "hidden", "height": "100%",
+               "boxSizing": "border-box"})
+
+
 def analizar_desarrollo_social(df):
     """
-    Módulo analítico premium para Dirección de Desarrollo Social.
-    Actualizado con subtítulos de alta legibilidad y estilo infográfico moderno.
+    Módulo analítico — Dirección de Desarrollo Social.
+    Misma estructura visual y colorimetría institucional (guinda/verde) que
+    los demás módulos del sistema; la lógica analítica no cambia.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de Desarrollo Social no contiene registros válidos o está vacío.", color="warning")
@@ -34,7 +119,7 @@ def analizar_desarrollo_social(df):
     # --- CÁLCULO DE INDICADORES (KPIs) ---
     total_beneficiarios = int(df_soc[col_benef].sum())
     total_expedientes = len(df_soc)
-    
+
     df_top_com = df_soc.groupby(col_com)[col_benef].sum().reset_index(name='TOTAL_APOYOS')
     if not df_top_com.empty and df_top_com['TOTAL_APOYOS'].sum() > 0:
         idx_max = df_top_com['TOTAL_APOYOS'].idxmax()
@@ -48,35 +133,14 @@ def analizar_desarrollo_social(df):
     realizados = total_expedientes - pendientes
     porcentaje_eficacia = (realizados / total_expedientes * 100) if total_expedientes > 0 else 0
 
-    # --- TARJETAS SUPERIORES ESTILO INFOGRÁFICO ---
+    # --- TARJETAS KPI (estilo institucional: badge-ring + borde superior) ---
     tarjetas_kpi = dbc.Row([
-        dbc.Col(
-            html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#691c32", "borderRadius": "8px 0 0 8px"}),
-                html.Small("CIUDADANOS BENEFICIADOS", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.H3(f"{total_beneficiarios:,.0f} Habs.", className="m-0 font-weight-bold mt-1", style={"color": "#691c32", "fontSize": "1.2rem"}),
-                html.Small("Impacto social acumulado", className="font-weight-bold d-block", style={"fontSize": "0.6rem", "color": "#374151"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
-        ),
-        dbc.Col(
-            html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#115e59", "borderRadius": "8px 0 0 8px"}),
-                html.Small("ZONA DE MAYOR ATENCIÓN TERRITORIAL", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.Div(texto_comunidad, className="m-0 font-weight-bold mt-1", style={"color": "#115e59", "fontSize": "0.95rem", "lineHeight": "1.2", "wordBreak": "break-word"}),
-                html.Small("Localidad con más apoyos dispersados", className="font-weight-bold d-block mt-1", style={"fontSize": "0.6rem", "color": "#374151"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
-        ),
-        dbc.Col(
-            html.Div([
-                html.Div(style={"position": "absolute", "top": "0", "left": "0", "bottom": "0", "width": "5px", "backgroundColor": "#dc2626", "borderRadius": "8px 0 0 8px"}),
-                html.Small("EXPEDIENTES PENDIENTES DE APROBACIÓN", className="font-weight-bold d-block", style={"fontSize": "0.7rem", "letterSpacing": "0.5px", "color": "#1f2937"}),
-                html.H3(f"{pendientes} Casos", className="m-0 font-weight-bold mt-1", style={"color": "#dc2626", "fontSize": "1.2rem"}),
-                html.Small("Requieren validación o desahogo", className="font-weight-bold d-block", style={"fontSize": "0.6rem", "color": "#991b1b"})
-            ], className="bg-white border p-3 position-relative shadow-sm h-100", style={"borderRadius": "8px"}), width=12, sm=4, className="mb-3"
-        ),
-    ], className="mb-2")
+        dbc.Col(_kpi_card("ti-users", "Ciudadanos beneficiados", f"{total_beneficiarios:,.0f} habs.", "Impacto social acumulado", VERDE), width=12, sm=4, className="mb-3"),
+        dbc.Col(_kpi_card("ti-map-pin", "Zona de mayor atención territorial", texto_comunidad, "Localidad con más apoyos dispersados", GUINDA), width=12, sm=4, className="mb-3"),
+        dbc.Col(_kpi_card("ti-alert-triangle", "Expedientes pendientes de aprobación", f"{pendientes} casos", "Requieren validación o desahogo", GUINDA), width=12, sm=4, className="mb-3"),
+    ])
 
-    # --- GRÁFICA 1: ANILLO INFOGRÁFICO DE DISTRIBUCIÓN ---
+    # --- GRÁFICA 1: ANILLO DE DISTRIBUCIÓN POR PROGRAMA ---
     df_prog = df_soc.groupby(col_act).size().reset_index(name='CONTEO')
     df_prog = df_prog.sort_values(by='CONTEO', ascending=False).reset_index(drop=True)
 
@@ -86,59 +150,57 @@ def analizar_desarrollo_social(df):
         hole=0.6,
         textinfo='percent',
         textposition='inside',
-        insidetextfont=dict(color='white', size=11, family="sans-serif", weight="bold"),
-        marker=dict(colors=["#115e59", "#691c32", "#bc955c", "#4b5563", "#9ca3af"]),
+        insidetextfont=dict(color='white', size=11, family="Inter, sans-serif"),
+        marker=dict(colors=[GUINDA, VERDE, "#C9A0AE", INK_FAINT, LINE], line=dict(color="#fff", width=1)),
         hovertemplate="<b>%{label}</b><br>Cantidad: %{value}<br>Porcentaje: %{percent}<extra></extra>"
     )])
 
     fig_programas.update_layout(
-        annotations=[dict(text=f"<b>{total_expedientes}</b><br>Total", x=0.5, y=0.5, font_size=13, font_color="#1f2937", showarrow=False)],
+        annotations=[dict(text=f"<b>{total_expedientes}</b><br>Total", x=0.5, y=0.5, font_size=13, font_color=INK, showarrow=False)],
         margin=dict(l=10, r=130, t=10, b=10),
-        legend=dict(
-            orientation="v", 
-            yanchor="middle", 
-            y=0.5, 
-            xanchor="left", 
-            x=1.02, 
-            font=dict(size=9, color="#1f2937")
-        ),
-        paper_bgcolor='rgba(0,0,0,0)', 
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02, font=dict(size=9, color=INK, family="Inter")),
+        paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         height=280
     )
+    panel_programas = _chart_panel(
+        "Distribución por programa social",
+        dcc.Graph(figure=fig_programas, config={'displayModeBar': False}),
+        color_top=VERDE
+    )
 
-    # --- GRÁFICA 2: INDICADOR TIPO GAUGE / RADIAL DE CUMPLIMIENTO ---
+    # --- GRÁFICA 2: INDICADOR RADIAL DE EFICACIA ---
     fig_gauge = go.Figure(go.Indicator(
         mode="gauge+number",
         value=porcentaje_eficacia,
-        number=dict(suffix="%", font=dict(color="#115e59", size=26, family="sans-serif")),
+        number=dict(suffix="%", font=dict(color=VERDE_DARK, size=26, family="Inter, sans-serif")),
         gauge=dict(
-            axis=dict(range=[0, 100], tickwidth=1, tickcolor="#1f2937"),
-            bar=dict(color="#115e59"),
+            axis=dict(range=[0, 100], tickwidth=1, tickcolor=INK_SOFT),
+            bar=dict(color=VERDE),
             bgcolor="white",
             borderwidth=2,
-            bordercolor="#e5e7eb",
+            bordercolor=LINE,
             steps=[
-                dict(range=[0, 50], color="#f3f4f6"),
-                dict(range=[50, 80], color="#e5e7eb"),
-                dict(range=[80, 100], color="#d1d5db")
+                dict(range=[0, 50], color=BG),
+                dict(range=[50, 80], color="#E7E3D8"),
+                dict(range=[80, 100], color=VERDE_LIGHT)
             ],
-            threshold=dict(
-                line=dict(color="#691c32", width=4),
-                thickness=0.75,
-                value=porcentaje_eficacia
-            )
+            threshold=dict(line=dict(color=GUINDA, width=4), thickness=0.75, value=porcentaje_eficacia)
         )
     ))
+    fig_gauge.update_layout(margin=dict(l=20, r=20, t=20, b=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=240)
 
-    fig_gauge.update_layout(
-        margin=dict(l=20, r=20, t=30, b=10),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        height=240
+    panel_gauge = _chart_panel(
+        "Eficacia global de gestión",
+        html.Div([
+            html.P("Porcentaje consolidado de expedientes concluidos vs. meta institucional.",
+                   className="text-center mb-1", style={"fontSize": "0.68rem", "color": INK_SOFT, "fontWeight": "500"}),
+            dcc.Graph(figure=fig_gauge, config={'displayModeBar': False})
+        ]),
+        color_top=GUINDA
     )
 
-    # --- TABLA DE HISTORIAL DETALLADO ---
+    # --- TABLA DE HISTORIAL DETALLADO (estilo institucional) ---
     columnas_tabla = [
         {"name": "Mes", "id": col_mes},
         {"name": "Localidad", "id": col_com},
@@ -147,67 +209,39 @@ def analizar_desarrollo_social(df):
         {"name": "Beneficiarios", "id": col_benef}
     ]
 
-    estilos_animacion = dcc.Markdown("""
-    <style>
-        @keyframes fadeInSlide {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .animar-entrada {
-            animation: fadeInSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-    </style>
-    """, dangerously_allow_html=True)
+    tabla_historial = html.Div([
+        dash_table.DataTable(
+            data=df_soc.to_dict('records'),
+            columns=columnas_tabla,
+            page_size=6,
+            style_table={'overflowX': 'auto'},
+            style_header={
+                'backgroundColor': GUINDA_DARK, 'color': 'white', 'fontWeight': '700',
+                'fontSize': '10.5px', 'letterSpacing': '.04em', 'textTransform': 'uppercase',
+                'textAlign': 'left', 'padding': '10px 14px', 'border': 'none'
+            },
+            style_cell={'padding': '9px 14px', 'fontSize': '12.5px', 'fontFamily': 'Inter, sans-serif',
+                        'textAlign': 'left', 'color': INK, 'border': 'none', 'borderBottom': f'1px solid {LINE}'},
+            style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#FAF8F4'}],
+            style_as_list_view=True,
+        )
+    ], style={"background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+               "borderTop": f"3px solid {VERDE}", "overflow": "hidden", "padding": "8px"})
 
     # --- CONSTRUCCIÓN DEL LAYOUT FINAL ---
     layout_final = html.Div([
-        estilos_animacion,
+        _fuentes_e_iconos(),
+        _section_label("ti-chart-bar", "Resumen general"),
         tarjetas_kpi,
-        
-        # Bloque de Visualizaciones con Estilo Infográfico
+
+        _section_label("ti-chart-donut", "Programas y eficacia"),
         dbc.Row([
-            dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-pie-chart-fill me-2"), "DISTRIBUCIÓN POR PROGRAMA SOCIAL (ANILLO INFOGRÁFICO)"], 
-                         style={'backgroundColor': '#115e59', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
-                html.Div(dcc.Graph(figure=fig_programas, config={'displayModeBar': False}), className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px"})
-            ], className="shadow-sm mb-4 animar-entrada"), md=6),
-            
-            dbc.Col(html.Div([
-                html.Div([html.I(className="bi bi-speedometer2 me-2"), "EFICACIA GLOBAL DE GESTIÓN (INDICADOR RADIAL)"], 
-                         style={'backgroundColor': '#115e59', 'color': 'white', 'padding': '10px 14px', 'fontWeight': 'bold', 'fontSize': '0.72rem', 'borderRadius': '6px 6px 0 0'}),
-                html.Div([
-                    # Texto con color oscuro de alta legibilidad y grosor medio
-                    html.P("Porcentaje consolidado de expedientes concluidos vs. meta institucional.", 
-                           className="text-center mb-1", 
-                           style={"fontSize": "0.68rem", "color": "#1f2937", "fontWeight": "500"}),
-                    dcc.Graph(figure=fig_gauge, config={'displayModeBar': False})
-                ], className="p-3 border border-top-0 bg-white", style={"borderRadius": "0 0 6px 6px", "minHeight": "280px"})
-            ], className="shadow-sm mb-4 animar-entrada"), md=6),
+            dbc.Col(panel_programas, md=6, className="mb-3"),
+            dbc.Col(panel_gauge, md=6, className="mb-3"),
         ]),
 
-        # Bloque de la Tabla Histórica
-        dbc.Row([
-            dbc.Col(html.Div([
-                html.Div([
-                    html.I(className="bi bi-people-fill me-2", style={"color": "#bc955c"}),
-                    "PADRÓN GENERAL Y HISTÓRICO DE APOYOS DIRECTOS - DESARROLLO SOCIAL"
-                ], style={
-                    'backgroundColor': '#691c32', 'color': 'white', 'padding': '12px 16px', 
-                    'fontWeight': '700', 'fontSize': '0.8rem', 'borderRadius': '6px 6px 0 0'
-                }),
-                html.Div([
-                    dash_table.DataTable(
-                        data=df_soc.to_dict('records'),
-                        columns=columnas_tabla,
-                        page_size=6,
-                        style_table={'overflowX': 'auto'},
-                        style_header={'backgroundColor': '#f3f4f6', 'color': '#1f2937', 'fontWeight': 'bold', 'fontSize': '11px', 'textAlign': 'left', 'borderBottom': '2px solid #e5e7eb'},
-                        style_cell={'padding': '9px 8px', 'fontSize': '11px', 'fontFamily': 'sans-serif', 'textAlign': 'left', 'borderBottom': '1px solid #f3f4f6'},
-                        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#f9fafb'}]
-                    )
-                ], className="bg-white border border-top-0 p-2", style={'borderRadius': '0 0 6px 6px'})
-            ], className="shadow-sm mb-2 animar-entrada"), md=12)
-        ])
-    ], style={'padding': '5px'})
+        _section_label("ti-table", "Padrón general e histórico de apoyos directos"),
+        dbc.Row([dbc.Col(tabla_historial, md=12)]),
+    ], style={"background": BG, "fontFamily": FONT_SANS, "color": INK, "padding": "5px"})
 
     return layout_final
