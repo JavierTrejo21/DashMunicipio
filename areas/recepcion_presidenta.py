@@ -24,6 +24,15 @@ LINE = "#E3DDD2"
 FONT_SANS = "'Inter', sans-serif"
 FONT_SERIF = "'Playfair Display', serif"
 
+POBLACION_TOTAL_MUNICIPIO = 22903
+
+# Diccionario para orden cronológico de meses en español
+MESES_ORDEN = {
+    'ENERO': 1, 'FEBRERO': 2, 'MARZO': 3, 'ABRIL': 4,
+    'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8,
+    'SEPTIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12
+}
+
 
 def limpiar_texto(texto):
     if not isinstance(texto, str):
@@ -98,10 +107,6 @@ def _chart_panel(titulo, fig, color_top=GUINDA):
 
 
 def _rubro_card(nombre_rubro, pct_inversion, ben_rubro, pct_beneficiarios, color=GUINDA):
-    """
-    Tarjeta de rubro modificada: Muestra el porcentaje global de inversión del rubro
-    y los beneficiarios totales en relación con el total general.
-    """
     return html.Div([
         html.Div([
             html.I(className="ti ti-tag", style={"color": color, "fontSize": "14px"}),
@@ -182,15 +187,18 @@ def analizar_recepcion_presidenta(df):
             beneficiarios_totales = df_rec[col_beneficiarios].sum()
 
         recurso_total = df_rec[col_recurso].sum()
-        gestiones_atendidas = len(df_rec)
-        comunidades_atendidas = df_rec[col_comunidad].nunique() if col_comunidad else 0
 
-        # Tarjetas KPI principales
+        # Cálculo dinámico del porcentaje de la población atendida respecto al total municipal (22,903)
+        pct_poblacion_total = (beneficiarios_totales / POBLACION_TOTAL_MUNICIPIO) * 100 if POBLACION_TOTAL_MUNICIPIO > 0 else 0
+
+        # =================================================================
+        # TARJETAS KPI PRINCIPALES
+        # =================================================================
         kpis_row = dbc.Row([
-            dbc.Col(_kpi_card("ti-cash", "Recurso entregado", f"${recurso_total:,.2f}", "Apoyo poblacional", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
-            dbc.Col(_kpi_card("ti-users", "Beneficiarios atendidos", f"{beneficiarios_totales:,.0f} civ.", "Alcance depurado", VERDE), width=12, sm=6, lg=3, className="mb-3"),
-            dbc.Col(_kpi_card("ti-map-pin", "Comunidades alcanzadas", f"{comunidades_atendidas:,.0f}", "Cobertura municipal", VERDE), width=12, sm=6, lg=3, className="mb-3"),
-            dbc.Col(_kpi_card("ti-clipboard-check", "Gestiones atendidas", f"{gestiones_atendidas:,.0f}", "Total de registros", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-cash", "Recurso entregado", f"${recurso_total:,.2f}", "Cantidad total entregada en diferentes rubros.", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-users", "Población Atendida", f"{beneficiarios_totales:,.0f} Ciudadanos.", f"{pct_poblacion_total:.1f}% de la población total del municipio (22,903 Ciudadanos).", VERDE), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-user-check", "Audiencias atendidas por la presidenta", "1,427", "Atención directa a personas y Comisiones de comunidades.", VERDE), width=12, sm=6, lg=3, className="mb-3"),
+            dbc.Col(_kpi_card("ti-gift", "Apoyos en especie entregados", "175", "Material de construcción, implementos para el campo, etc.", GUINDA), width=12, sm=6, lg=3, className="mb-3"),
         ])
 
         # Agrupación precisa por Rubros
@@ -205,35 +213,21 @@ def analizar_recepcion_presidenta(df):
         df_rubros['PORCENTAJE_INV'] = (df_rubros[col_recurso] / total_rec_val) * 100
         df_rubros['PORCENTAJE_BEN'] = (df_rubros[col_beneficiarios] / total_ben_val) * 100
 
-        # Gráfica de barras
-        fig_barras = px.bar(
-            df_rubros,
-            x=col_rubro,
-            y=col_recurso,
-            text=df_rubros.apply(lambda r: f"{r['PORCENTAJE_INV']:.1f}%<br>${r[col_recurso]:,.0f}", axis=1),
-            color_discrete_sequence=[GUINDA],
-            labels={col_recurso: "Recurso Entregado", col_rubro: ""}
-        )
-        fig_barras.update_traces(textposition='inside', insidetextanchor='middle', textfont=dict(color="white", size=10))
-        fig_barras.update_layout(
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            height=300,
-            margin=dict(l=20, r=15, t=10, b=70),
-            xaxis=dict(showgrid=False, title="", tickangle=-30, tickfont=dict(color=INK_SOFT)),
-            yaxis=dict(showgrid=True, gridcolor="#f0f0f0", title="", tickfont=dict(color=INK_SOFT)),
-            font=dict(family="Inter, sans-serif")
-        )
-
-        # Gráfica de línea (Histórico mensual)
+        # Histórico mensual y ordenamiento cronológico por mes
         if col_mes and not df_rec[col_mes].isna().all():
-            df_meses = df_rec.groupby(col_mes, as_index=False)[col_recurso].sum()
+            df_rec['__MES_LIMPIO__'] = df_rec[col_mes].apply(limpiar_texto)
+            df_meses = df_rec.groupby('__MES_LIMPIO__', as_index=False)[col_recurso].sum()
+            df_meses['ORDEN'] = df_meses['__MES_LIMPIO__'].map(MESES_ORDEN).fillna(99)
+            df_meses = df_meses.sort_values('ORDEN').drop(columns=['ORDEN'])
+            df_meses = df_meses.rename(columns={'__MES_LIMPIO__': col_mes})
         else:
             df_meses = pd.DataFrame({
-                'MES': ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio"],
-                col_recurso: [0, 0, 0, 0, 0, 0, 0]
+                'MES': ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"],
+                col_recurso: [0]*12
             })
             col_mes = 'MES'
+
+        promedio_mensual = df_meses[col_recurso].mean() if len(df_meses) > 0 else 0
 
         fig_linea = px.line(
             df_meses,
@@ -243,6 +237,14 @@ def analizar_recepcion_presidenta(df):
             text=df_meses[col_recurso].apply(lambda x: f"${x:,.0f}"),
             color_discrete_sequence=[VERDE],
             labels={col_recurso: "Recurso Entregado", col_mes: ""}
+        )
+        fig_linea.add_hline(
+            y=promedio_mensual,
+            line_dash="dash",
+            line_color=GUINDA,
+            annotation_text=f"Promedio: ${promedio_mensual:,.2f}",
+            annotation_position="bottom right",
+            annotation_font=dict(size=10, color=GUINDA)
         )
         fig_linea.update_traces(textposition="top center", line=dict(width=3), textfont=dict(size=10, color=INK_SOFT))
         fig_linea.update_layout(
@@ -255,12 +257,53 @@ def analizar_recepcion_presidenta(df):
             font=dict(family="Inter, sans-serif")
         )
 
-        graficas_row = dbc.Row([
-            dbc.Col(_chart_panel("Distribución y porcentaje por principales rubros", fig_barras, color_top=GUINDA), md=7, className="mb-3"),
-            dbc.Col(_chart_panel("Histórico mensual de entrega de recursos", fig_linea, color_top=VERDE), md=5, className="mb-3"),
+        # Construcción de la tabla ordenada por mes con encabezado fijo (sticky header) y diseño acorde al archivo
+        rows_tabla_meses = []
+        for i, (_, r_m) in enumerate(df_meses.iterrows()):
+            mes_nombre = str(r_m[col_mes]).capitalize()
+            monto_mes = r_m[col_recurso]
+            bg_row = CARD if i % 2 == 0 else "#FAF8F5"
+            rows_tabla_meses.append(
+                html.Tr([
+                    html.Td(mes_nombre, style={"padding": "9px 12px", "borderBottom": f"1px solid {LINE}", "fontSize": "11.5px", "color": INK}),
+                    html.Td(f"${monto_mes:,.2f}", style={"padding": "9px 12px", "borderBottom": f"1px solid {LINE}", "fontSize": "11.5px", "textAlign": "right", "fontWeight": "600", "color": INK})
+                ], style={"backgroundColor": bg_row})
+            )
+
+        # Fila de promedio / total general
+        rows_tabla_meses.append(
+            html.Tr([
+                html.Td("Promedio mensual", style={"padding": "10px 12px", "fontWeight": "700", "fontSize": "12px", "color": GUINDA_DARK, "background": GUINDA_LIGHT, "borderTop": f"2px solid {GUINDA}"}),
+                html.Td(f"${promedio_mensual:,.2f}", style={"padding": "10px 12px", "fontWeight": "700", "fontSize": "12px", "textAlign": "right", "color": GUINDA_DARK, "background": GUINDA_LIGHT, "borderTop": f"2px solid {GUINDA}"})
+            ])
+        )
+
+        tabla_meses_componente = html.Div([
+            html.Div("Detalle por Mes y Promedio", style={"fontSize": "11px", "fontWeight": "700", "letterSpacing": ".03em", "textTransform": "uppercase", "color": INK_SOFT, "marginBottom": "10px"}),
+            html.Div(
+                html.Table([
+                    html.Thead(html.Tr([
+                        html.Th("Mes", style={
+                            "padding": "9px 12px", "background": BG, "borderBottom": f"2px solid {LINE}", 
+                            "fontSize": "11px", "color": INK_SOFT, "position": "sticky", "top": "0", "zIndex": "2", "textTransform": "uppercase", "letterSpacing": ".03em"
+                        }),
+                        html.Th("Recurso", style={
+                            "padding": "9px 12px", "background": BG, "borderBottom": f"2px solid {LINE}", 
+                            "fontSize": "11px", "textAlign": "right", "color": INK_SOFT, "position": "sticky", "top": "0", "zIndex": "2", "textTransform": "uppercase", "letterSpacing": ".03em"
+                        })
+                    ])),
+                    html.Tbody(rows_tabla_meses)
+                ], style={"width": "100%", "borderCollapse": "collapse"}),
+                style={"maxHeight": "290px", "overflowY": "auto", "border": f"1px solid {LINE}", "borderRadius": "6px", "background": CARD, "boxShadow": "inset 0 1px 2px rgba(0,0,0,0.02)"}
+            )
         ])
 
-        # Tarjetas inferiores — Desglose por rubro actualizado (Solo % inversión y beneficiarios totales)
+        grafica_y_tabla_row = dbc.Row([
+            dbc.Col(_chart_panel("Histórico mensual y línea de promedio de entrega de recursos", fig_linea, color_top=VERDE), md=8, className="mb-3"),
+            dbc.Col(tabla_meses_componente, md=4, className="mb-3"),
+        ])
+
+        # Tarjetas inferiores — Desglose por rubro
         tarjetas_rubros_cols = []
         for i, (_, row) in enumerate(df_rubros.iterrows()):
             nombre_rubro = str(row[col_rubro])
@@ -282,7 +325,7 @@ def analizar_recepcion_presidenta(df):
             _section_label("ti-chart-bar", "Resumen general de apoyos"),
             kpis_row,
             _section_label("ti-chart-area", "Comportamiento e histórico"),
-            graficas_row,
+            grafica_y_tabla_row,
             _section_label("ti-list-details", "Desglose porcentual y poblacional por rubro"),
             grid_tarjetas_rubros,
         ], style={"background": BG, "fontFamily": FONT_SANS, "color": INK, "padding": "5px"})
