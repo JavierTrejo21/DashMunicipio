@@ -123,7 +123,7 @@ def _rubro_card(nombre_rubro, pct_inversion, ben_rubro, pct_beneficiarios, color
         }),
         html.Div([
             html.I(className="ti ti-users", style={"color": INK_FAINT, "fontSize": "12px"}),
-            html.Span(f" {ben_rubro:,.0f} civ. ({pct_beneficiarios:.1f}% del total)", style={
+            html.Span(f" {ben_rubro:,.0f} Ciudadanos ({pct_beneficiarios:.1f}% del total)", style={
                 "fontSize": "10.5px", "color": INK_SOFT, "marginLeft": "4px"
             }),
         ]),
@@ -212,6 +212,9 @@ def analizar_recepcion_presidenta(df):
 
         df_rubros['PORCENTAJE_INV'] = (df_rubros[col_recurso] / total_rec_val) * 100
         df_rubros['PORCENTAJE_BEN'] = (df_rubros[col_beneficiarios] / total_ben_val) * 100
+
+        # Omitir rubros con 0% o sin inversión activa para evitar tarjetas vacías
+        df_rubros = df_rubros[df_rubros['PORCENTAJE_INV'] > 0]
 
         # Histórico mensual y ordenamiento cronológico por mes
         if col_mes and not df_rec[col_mes].isna().all():
@@ -303,7 +306,7 @@ def analizar_recepcion_presidenta(df):
             dbc.Col(tabla_meses_componente, md=4, className="mb-3"),
         ])
 
-        # Tarjetas inferiores — Desglose por rubro
+        # Tarjetas inferiores — Desglose por rubro (filtradas sin ceros)
         tarjetas_rubros_cols = []
         for i, (_, row) in enumerate(df_rubros.iterrows()):
             nombre_rubro = str(row[col_rubro])
