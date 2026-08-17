@@ -10,9 +10,11 @@ def servir_layout():
         # --- RECURSOS EXTERNOS (Fuentes) ---
         html.Link(href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap", rel="stylesheet"),
         
-        # Almacenamiento de datos de sesión y componente de descarga
+                # Almacenamiento de datos de sesión y componente de descarga
         dcc.Store(id="active-info"),
         dcc.Download(id="download-excel-mir-original"),
+        dcc.Download(id="download-reporte-eje"),
+
 
         # --- TOPBAR (Estilo Institucional) ---
         html.Div([
@@ -91,7 +93,7 @@ def servir_layout():
                                 ], className="card-text")
                             ], className="card-top"),
                             html.Div([
-                                html.Span("64% de avance", className="pct-tag", style={"color": "#8A6512"}),
+                                html.Span("79.67% de avance", className="pct-tag", style={"color": "#8A6512"}),
                                 html.Span([html.I(className="bi bi-bar-chart-line me-1"), "12 indicadores"], className="status-tag")
                             ], className="card-foot")
                         ], id={"type": "tarjeta-eje", "index": 1}, className="card-inst hub mx-auto", style={"maxWidth": "420px"})
@@ -102,9 +104,9 @@ def servir_layout():
                 dbc.Row([
                     # Columna Izquierda (Ejes 2, 3, 4)
                     dbc.Col([
-                        crear_tarjeta_eje_v4(2, "Bienestar y Prosperidad", "bi-rocket-takeoff", 48, 9),
-                        crear_tarjeta_eje_v4(3, "Desarrollo Económico y Cultural", "bi-building-up", 55, 7),
-                        crear_tarjeta_eje_v4(4, "Desarrollo Sostenible e Infraestructura", "bi-leaf", 60, 10),
+                        crear_tarjeta_eje_v4(2, "Bienestar y Prosperidad", "bi-rocket-takeoff", 62.16, 9),
+                        crear_tarjeta_eje_v4(3, "Desarrollo Económico y Cultural", "bi-building-up", 57.41, 7),
+                        crear_tarjeta_eje_v4(4, "Desarrollo Sostenible e Infraestructura", "bi-leaf", 52.20, 10),
                     ], md=4, className="d-flex flex-column gap-3"),
 
                     # Columna Central (Panel de Áreas Dinámico)
@@ -115,11 +117,17 @@ def servir_layout():
                             children=html.Div([
                                 html.Div([
                                     html.I(className="bi bi-folder-fill me-2"),
-                                    html.Div([
+                                                                        html.Div([
                                         html.Div("Áreas Administrativas", className="fw-bold", style={"fontSize": "12.5px"}),
                                         html.Div(id="titulo-eje-seleccionado", className="opacity-75", style={"fontSize": "10.5px"})
-                                    ])
+                                    ]),
+                                    dbc.Button([
+                                        html.I(className="bi bi-file-earmark-pdf me-1"),
+                                        "PDF"
+                                    ], id="btn-generar-pdf-eje", color="link", size="sm", 
+                                    className="ms-auto text-white p-0", style={"fontSize": "11px", "textDecoration": "none"})
                                 ], className="areas-head-custom d-flex align-items-center"),
+
                                 html.Div(id="contenedor-botones-areas", className="p-2 d-flex flex-column gap-1")
                             ], className="areas-panel-custom")
                         ),
@@ -134,9 +142,9 @@ def servir_layout():
 
                     # Columna Derecha (Ejes 5, 6, 7)
                     dbc.Col([
-                        crear_tarjeta_eje_v4(5, "Igualdad y Derechos Humanos", "bi-heart-pulse", 71, 8),
-                        crear_tarjeta_eje_v4(6, "Gobierno Tecnológico y Digital", "bi-laptop", 39, 6),
-                        crear_tarjeta_eje_v4(7, "Transparencia y Rendición de Cuentas", "bi-shield-check", 82, 11),
+                        crear_tarjeta_eje_v4(5, "Igualdad y Derechos Humanos", "bi-heart-pulse", 35.65, 8),
+                        crear_tarjeta_eje_v4(6, "Gobierno Tecnológico y Digital", "bi-laptop", 6.67, 6),
+                        crear_tarjeta_eje_v4(7, "Transparencia y Rendición de Cuentas", "bi-shield-check", 18.86, 11),
                     ], md=4, className="d-flex flex-column gap-3"),
                 ], className="g-4")
             ], id="contenedor-tarjetas-acuerdos"),

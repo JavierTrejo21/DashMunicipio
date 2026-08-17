@@ -21,6 +21,7 @@ from areas.estado_familiar import analizar_estado_familiar
 from areas.conciliacion_municipal import analizar_conciliacion_municipal
 from areas.seguridad_publica import analizar_seguridad_publica
 from areas.licencias_reglamentos import analizar_licencias_reglamentos
+from areas.traslados_municipales import analizar_traslados_municipales
 from areas.mujeres import analizar_instancia_mujeres
 from areas.obras_publicas import analizar_obras_publicas
 from areas.orientacion_alimentaria import analizar_orientacion_alimentaria
@@ -172,6 +173,16 @@ MAPEO_ANALISIS = {
     "2.1.4 DIF DESAYUNOS ESCOLARES.xlsx - Hoja1.csv": analizar_desayunos_escolares,
     "DIF_DESAYUNOS_ESCOLARES": analizar_desayunos_escolares,
     "desayunos_escolares": analizar_desayunos_escolares,
+    # --- ÁREA: 2.11 TRASLADOS MUNICIPALES ---
+    "2.11 TRASLADOS MUNICIPALES.xlsx - Hoja1.csv": analizar_traslados_municipales,
+    "2.11 TRASLADOS MUNICIPALES.xlsx - Hoja1": analizar_traslados_municipales,
+    "2.11 TRASLADOS MUNICIPALES": analizar_traslados_municipales,
+    "2.11 TRASLADOS DIF.xlsx - Hoja1.csv": analizar_traslados_municipales,
+    "2.11 TRASLADOS DIF.xlsx - Hoja1": analizar_traslados_municipales,
+    "2.11 TRASLADOS DIF": analizar_traslados_municipales,
+    "2_11_TRASLADOS_MUNICIPALES": analizar_traslados_municipales,
+    "TRASLADOS_MUNICIPALES": analizar_traslados_municipales,
+    "traslados": analizar_traslados_municipales,
     # --- ÁREA: 2.1.2 DIF APOYOS ECONÓMICOS ---
     "2_1_2_DIF_APOYOS_ECONOMICOS": analizar_apoyos_economicos,
     "2.1.2 DIF APOYOS ECONOMICOS": analizar_apoyos_economicos,
