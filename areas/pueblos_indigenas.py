@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
-from dash import html, dcc, dash_table
+from dash import html, dcc, dash_table, Input, Output, callback
 
 # ==========================================================
 # PALETA INSTITUCIONAL DEL SISTEMA (misma que bibliotecas.py)
@@ -29,7 +29,7 @@ COLORES_SERIES = [GUINDA, VERDE, "#BC955C", GUINDA_DARK, VERDE_DARK, INK_SOFT, "
 
 
 # ==========================================================
-# BLOQUES DE LAYOUT (idénticos a bibliotecas.py)
+# BLOQUES DE LAYOUT (idénticos a bibliotecas.py y protección civil)
 # ==========================================================
 
 def _fuentes_e_iconos():
@@ -107,10 +107,92 @@ def _chart_panel_custom(header_icono, header_texto, header_color, subtitulo, gra
     ], style={"boxShadow": "0 1px 3px rgba(84,19,42,.06)"})
 
 
+# ==========================================================
+# TABLA INTERACTIVA CON FILTRO DE COMUNIDAD (Patrón Protección Civil)
+# ==========================================================
+ID_DROPDOWN_COMUNIDAD_PI = "pi-comunidad-dropdown"
+ID_TABLA_COMUNIDAD_PI = "pi-tabla-comunidad"
+
+_cache_detalle_pi = {"data": pd.DataFrame()}
+
+def _tabla_detalle_comunidad(df_detalle, columnas_mostrar, etiquetas):
+    comunidades_opciones = sorted(df_detalle["COMUNIDAD"].dropna().unique().tolist()) if "COMUNIDAD" in df_detalle.columns else []
+
+    selector = html.Div([
+        html.Div([
+            html.I(className="ti ti-search", style={"color": VERDE, "fontSize": "14px", "marginRight": "6px"}),
+            html.Span("CONSULTA DETALLADA POR COMUNIDAD", style={
+                "fontFamily": FONT_SERIF, "fontWeight": "700", "fontSize": "12.5px",
+                "letterSpacing": ".03em", "color": GUINDA_DARK, "textTransform": "uppercase"
+            }),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "8px"}),
+        html.Div("Selecciona o busca una comunidad para verificar el detalle del padrón histórico, meses y apoyos:",
+                 style={"fontSize": "11px", "color": INK_SOFT, "marginBottom": "10px"}),
+        dcc.Dropdown(
+            id=ID_DROPDOWN_COMUNIDAD_PI,
+            options=[{"label": str(c).title(), "value": c} for c in comunidades_opciones],
+            placeholder="Selecciona una comunidad (muestra todas si está vacío)...",
+            clearable=True,
+            style={"fontSize": "12.5px", "fontFamily": FONT_SANS}
+        ),
+    ], style={
+        "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+        "borderTop": f"3px solid {VERDE}", "padding": "16px 18px", "marginBottom": "14px"
+    })
+
+    columnas = [{"name": etiquetas.get(c, c), "id": c} for c in columnas_mostrar]
+
+    tabla = dash_table.DataTable(
+        id=ID_TABLA_COMUNIDAD_PI,
+        columns=columnas,
+        data=df_detalle[columnas_mostrar].to_dict("records"),
+        sort_action="native",
+        page_action="native",
+        page_size=8,
+        style_as_list_view=True,
+        style_table={"overflowX": "auto"},
+        style_header={
+            "backgroundColor": GUINDA_DARK, "color": "#fff", "fontWeight": "700",
+            "fontSize": "10.5px", "letterSpacing": ".04em", "textTransform": "uppercase",
+            "textAlign": "left", "padding": "10px 14px", "border": "none"
+        },
+        style_cell={
+            "fontFamily": FONT_SANS, "fontSize": "12.5px", "color": INK,
+            "padding": "10px 14px", "textAlign": "left", "border": "none",
+            "borderBottom": f"1px solid {LINE}"
+        },
+        style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "#FAF8F4"},
+        ],
+        css=[{"selector": ".dash-spreadsheet-menu", "rule": "display:none"}],
+    )
+
+    return html.Div([
+        selector,
+        html.Div(tabla, style={
+            "background": CARD, "border": f"1px solid {LINE}", "borderRadius": "8px",
+            "overflow": "hidden"
+        }),
+    ])
+
+
+@callback(
+    Output(ID_TABLA_COMUNIDAD_PI, "data"),
+    Input(ID_DROPDOWN_COMUNIDAD_PI, "value")
+)
+def _actualizar_tabla_detalle_pi(comunidad_seleccionada):
+    df_detalle = _cache_detalle_pi["data"]
+    if df_detalle.empty:
+        return []
+    if comunidad_seleccionada:
+        df_detalle = df_detalle[df_detalle["COMUNIDAD"] == comunidad_seleccionada]
+    return df_detalle.to_dict("records")
+
+
 def analizar_pueblos_indigenas(df):
     """
     Módulo analítico premium e independiente para la Dirección de Pueblos Indígenas.
-    Actualizado con estilo infográfico institucional y máxima legibilidad.
+    Actualizado con estilo infográfico institucional y buscador de tabla interactivo.
     """
     if df is None or df.empty:
         return dbc.Alert("⚠️ El archivo de Pueblos Indígenas no contiene registros válidos o está vacío.", color="warning")
@@ -125,7 +207,6 @@ def analizar_pueblos_indigenas(df):
     col_lengua    = next((c for c in columnas_reales if "LENGUA"    in c or "MATERNA" in c), None)
     col_benef     = next((c for c in columnas_reales if "BENEF"     in c or "ATEND" in c), "BENEFICIARIOS")
     col_prog      = next((c for c in columnas_reales if "PROG"      in c or "TIPO"  in c), "TIPO DE PROGRAMA")
-    col_inv       = next((c for c in columnas_reales if "INV"       in c), "INVERSION")
 
     # --- LIMPIEZA RIGUROSA DE DATOS ---
     if col_benef in df_ind.columns:
@@ -134,15 +215,7 @@ def analizar_pueblos_indigenas(df):
         df_ind['BENEFICIARIOS_LIMPIO'] = 1
         col_benef = 'BENEFICIARIOS_LIMPIO'
 
-    if col_inv in df_ind.columns:
-        df_ind[col_inv] = df_ind[col_inv].astype(str).str.replace('$', '', regex=False).str.replace(',', '', regex=False).str.strip()
-        df_ind[col_inv] = pd.to_numeric(df_ind[col_inv], errors='coerce').fillna(0)
-    else:
-        df_ind['INVERSION_LIMPIA'] = 0
-        col_inv = 'INVERSION_LIMPIA'
-
     # --- CÁLCULO DE MÉTRICAS ---
-    total_inversion     = df_ind[col_inv].sum()
     total_beneficiarios = df_ind[col_benef].sum()
     total_expedientes   = len(df_ind)
 
@@ -152,16 +225,15 @@ def analizar_pueblos_indigenas(df):
         comunidades_lengua = df_ind[col_comunidad].nunique()
 
     # ==========================================================
-    # KPI CARDS — estilo institucional badge-ring + borde superior
+    # KPI CARDS — 2 tarjetas ajustadas (sin inversión)
     # ==========================================================
     tarjetas_kpi = dbc.Row([
-        dbc.Col(_kpi_card("ti-cash",        "Inversión total asignada",              f"${total_inversion:,.2f}",               "Fondos ejecutados y apoyos económicos",    GUINDA), width=12, sm=4, className="mb-3"),
-        dbc.Col(_kpi_card("ti-users",       "Población indígena beneficiada",        f"{total_beneficiarios:,.0f} habs.",      "Ciudadanos atendidos de manera directa",   VERDE),  width=12, sm=4, className="mb-3"),
-        dbc.Col(_kpi_card("ti-language",    "Localidades con lengua materna",        f"{comunidades_lengua} comunidades",      "Identidad cultural y hablantes activos",   GUINDA), width=12, sm=4, className="mb-3"),
+        dbc.Col(_kpi_card("ti-users",       "Población indígena beneficiada",        f"{total_beneficiarios:,.0f} habs.",      "Ciudadanos atendidos de manera directa",   VERDE),  width=12, sm=6, className="mb-3"),
+        dbc.Col(_kpi_card("ti-language",    "Localidades con lengua materna",        f"{comunidades_lengua} comunidades",      "Identidad cultural y hablantes activos",   GUINDA), width=12, sm=6, className="mb-3"),
     ], className="mb-2")
 
     # ==========================================================
-    # GRÁFICA 1: ANILLO DE PROGRAMAS — lógica original intacta
+    # GRÁFICA 1: ANILLO DE PROGRAMAS
     # ==========================================================
     df_ind[col_prog] = df_ind[col_prog].fillna("POR CLASIFICAR").astype(str).str.strip()
     df_programas     = df_ind.groupby(col_prog).size().reset_index(name='CONTEO')
@@ -190,7 +262,7 @@ def analizar_pueblos_indigenas(df):
     )
 
     # ==========================================================
-    # GRÁFICA 2: BARRAS HORIZONTALES POR LOCALIDAD — lógica original intacta
+    # GRÁFICA 2: BARRAS HORIZONTALES POR LOCALIDAD
     # ==========================================================
     df_comunidades = (
         df_ind.groupby(col_comunidad)[col_benef].sum()
@@ -214,44 +286,26 @@ def analizar_pueblos_indigenas(df):
     )
 
     # ==========================================================
-    # TABLA DE PADRÓN — dash_table con paginación, lógica intacta
+    # TABLA DE PADRÓN INTERACTIVA CON FILTRO
     # ==========================================================
-    df_ind["INVERSION_M"] = df_ind[col_inv].apply(lambda x: f"${x:,.2f}" if x > 0 else "$0.00")
+    columnas_detalle = [c for c in [col_comunidad, col_mes, col_prog, col_lengua, col_benef] if c]
+    if col_comunidad and columnas_detalle:
+        df_detalle = df_ind[columnas_detalle].copy()
+        df_detalle = df_detalle.rename(columns={col_comunidad: "COMUNIDAD"})
+        df_detalle["COMUNIDAD"] = df_detalle["COMUNIDAD"].str.title()
+        df_detalle = df_detalle.sort_values(by=col_benef, ascending=False) if col_benef else df_detalle
 
-    columnas_tabla = [
-        {"name": "Periodo / Mes",              "id": col_mes},
-        {"name": "Comunidad Indígena",         "id": col_comunidad},
-        {"name": "Programa o Apoyo Otorgado",  "id": col_prog},
-        {"name": "Hablantes Maternos",         "id": col_lengua if col_lengua else col_comunidad},
-        {"name": "Población Atendida",         "id": col_benef},
-        {"name": "Inversión Aplicada",         "id": "INVERSION_M"},
-    ]
+        columnas_mostrar = ["COMUNIDAD"] + [c for c in [col_mes, col_prog, col_lengua, col_benef] if c != col_comunidad]
+        etiquetas = {
+            "COMUNIDAD": "Comunidad Indígena", col_mes: "Periodo / Mes",
+            col_prog: "Programa o Apoyo Otorgado", col_lengua: "Hablantes Maternos",
+            col_benef: "Población Atendida"
+        }
 
-    panel_tabla = html.Div([
-        _panel_header("ti-notebook", "Padrón completo y histórico de atención a comunidades indígenas", GUINDA),
-        html.Div([
-            dash_table.DataTable(
-                data=df_ind.to_dict('records'),
-                columns=columnas_tabla,
-                page_size=6,
-                style_table={"overflowX": "auto"},
-                style_header={
-                    "backgroundColor": GUINDA_LIGHT, "color": GUINDA_DARK,
-                    "fontWeight": "700", "fontSize": "11px", "textAlign": "left",
-                    "borderBottom": f"2px solid {LINE}", "fontFamily": "Inter, sans-serif"
-                },
-                style_cell={
-                    "padding": "9px 10px", "fontSize": "11.5px", "fontFamily": "Inter, sans-serif",
-                    "textAlign": "left", "borderBottom": f"1px solid {LINE}",
-                    "color": INK, "backgroundColor": CARD
-                },
-                style_data_conditional=[
-                    {"if": {"row_index": "odd"}, "backgroundColor": "#FAF8F4"}
-                ]
-            )
-        ], style={"background": CARD, "border": f"1px solid {LINE}", "borderTop": "0",
-                  "borderRadius": "0 0 8px 8px", "padding": "10px"}),
-    ], style={"boxShadow": "0 1px 3px rgba(84,19,42,.06)"})
+        _cache_detalle_pi["data"] = df_detalle[columnas_mostrar]
+        panel_tabla = _tabla_detalle_comunidad(df_detalle, columnas_mostrar, etiquetas)
+    else:
+        panel_tabla = html.Div()
 
     # ==========================================================
     # LAYOUT CONSOLIDADO FINAL

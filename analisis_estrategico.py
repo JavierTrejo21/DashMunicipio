@@ -22,6 +22,7 @@ from areas.conciliacion_municipal import analizar_conciliacion_municipal
 from areas.seguridad_publica import analizar_seguridad_publica
 from areas.licencias_reglamentos import analizar_licencias_reglamentos
 from areas.traslados_municipales import analizar_traslados_municipales
+from areas.ubr import analizar_unidad_basica_rehabilitacion
 from areas.mujeres import analizar_instancia_mujeres
 from areas.obras_publicas import analizar_obras_publicas
 from areas.orientacion_alimentaria import analizar_orientacion_alimentaria
@@ -148,7 +149,7 @@ def analizar_datos_estrategicos(nombre_archivo, df):
 # -----------------------------------------------------------------
 MAPEO_ANALISIS = {
     # --- ÁREA: RECEPCIÓN DE LA PRESIDENTA ---
-    "5_1_1_RECEPCION_MUNICIPAL_PRESIDENTA": analizar_recepcion_presidenta,
+    "2_1_RECEPCION_MUNICIPAL_PRESIDENTA": analizar_recepcion_presidenta,
     "RECEPCION_MUNICIPAL_PRESIDENTA": analizar_recepcion_presidenta,
     # --- ÁREA: OBRAS PÚBLICAS ---
     "4_5_OBRAS_PUBLICAS": analizar_obras_publicas,
@@ -165,6 +166,16 @@ MAPEO_ANALISIS = {
     "4_1_ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
     "ECOLOGIA_Y_MEDIO_AMBIENTE": analizar_ecologia,
     "ecologia": analizar_ecologia,
+    # --- ÁREA: 2.12 UNIDAD BÁSICA DE REHABILITACIÓN (UBR) ---
+    "2.12 UNIDAD BÁSICA DE REHABILITACIÓN - UBR.xlsx - Hoja1.csv": analizar_unidad_basica_rehabilitacion,
+    "2.12 UNIDAD BÁSICA DE REHABILITACIÓN - UBR.xlsx - Hoja1": analizar_unidad_basica_rehabilitacion,
+    "2.12 UNIDAD BÁSICA DE REHABILITACIÓN - UBR": analizar_unidad_basica_rehabilitacion,
+    "2.12 UNIDAD BASICA DE REHABILITACION - UBR.xlsx - Hoja1.csv": analizar_unidad_basica_rehabilitacion,
+    "2.12 UNIDAD BASICA DE REHABILITACION - UBR.xlsx - Hoja1": analizar_unidad_basica_rehabilitacion,
+    "2.12 UNIDAD BASICA DE REHABILITACION - UBR": analizar_unidad_basica_rehabilitacion,
+    "2_12_UNIDAD_BASICA_DE_REHABILITACION_UBR": analizar_unidad_basica_rehabilitacion,
+    "UNIDAD_BASICA_DE_REHABILITACION_UBR": analizar_unidad_basica_rehabilitacion,
+    "ubr": analizar_unidad_basica_rehabilitacion,
     # --- ÁREA: 2.1.4 DIF DESAYUNOS ESCOLARES ---
     "2_1_4_DIF_DESAYUNOS_ESCOLARES": analizar_desayunos_escolares,
     "2.1.4 DIF DESAYUNOS ESCOLARES": analizar_desayunos_escolares,
@@ -196,17 +207,17 @@ MAPEO_ANALISIS = {
     "2.1.2 DIF APOYOS ECONÓMICOS.xlsx - Hoja1": analizar_apoyos_economicos,
     "2.1.2 DIF APOYOS ECONOMICOS.xlsx - Hoja1.csv": analizar_apoyos_economicos,
     "2.1.2 DIF APOYOS ECONOMICOS.xlsx - Hoja1.csv": analizar_apoyos_economicos,
-    # --- ÁREA: 5.1.2 PUEBLOS INDÍGENAS ---
-    "5.1.2 PUEBLOS INDIGENAS": analizar_pueblos_indigenas,
-    "5_1_2_PUEBLOS_INDIGENAS": analizar_pueblos_indigenas,
+    # --- ÁREA: 1.4 PUEBLOS INDÍGENAS ---
+    "1.4 PUEBLOS INDIGENAS": analizar_pueblos_indigenas,
+    "1_4_PUEBLOS_INDIGENAS": analizar_pueblos_indigenas,
     "PUEBLOS_INDIGENAS": analizar_pueblos_indigenas,
-    "5.1.2 PUEBLOS INDIGENAS.xlsx - Hoja1": analizar_pueblos_indigenas,
-    "5_1_2_PUEBLOS_INDIGENAS_XLSX___HOJA1": analizar_pueblos_indigenas,
+    "1.4 PUEBLOS INDIGENAS.xlsx - Hoja1": analizar_pueblos_indigenas,
+    "1_4_PUEBLOS_INDIGENAS_XLSX___HOJA1": analizar_pueblos_indigenas,
     (
-        "5.1.2 PUEBLOS INDIGENAS.xlsx - base de datos nueva lenguas ind"
+        "1.4 PUEBLOS INDIGENAS.xlsx - base de datos nueva lenguas ind"
     ): analizar_pueblos_indigenas,
     (
-        "5_1_2_PUEBLOS_INDIGENAS_XLSX___BASE_DE_DATOS_NUEVA_LENGUAS_IND"
+        "1_4_PUEBLOS_INDIGENAS_XLSX___BASE_DE_DATOS_NUEVA_LENGUAS_IND"
     ): analizar_pueblos_indigenas,
     "BASE_DE_DATOS_NUEVA_LENGUAS_IND": analizar_pueblos_indigenas,
     # --- ÁREA: 2.1.3 DIF APOYOS ATENCIÓN A ADULTOS MAYORES ---
@@ -285,16 +296,16 @@ MAPEO_ANALISIS = {
     "5_1_DESARROLLO_SOCIAL_XLSX___HOJA1": analizar_desarrollo_social,
     # --- ÁREA: 5.3 INSTANCIA DE LAS MUJERES ---
     (
-        "5.3 INSTANCIA MUNICIPAL PARA EL DESARROLLO DE LAS MUJERES"
+        "2.3 INSTANCIA MUNICIPAL PARA EL DESARROLLO DE LAS MUJERES"
     ): analizar_instancia_mujeres,
     (
-        "5.3 INSTANCIA MUNICIPAL PARA EL DESARROLLO DE LAS MUJERES.xlsx -"
+        "2.3 INSTANCIA MUNICIPAL PARA EL DESARROLLO DE LAS MUJERES.xlsx -"
         " Hoja1"
     ): analizar_instancia_mujeres,
     (
-        "5_3_INSTANCIA_MUNICIPAL_PARA_EL_DESARROLLO_DE_LAS_MUJERES"
+        "2_3_INSTANCIA_MUNICIPAL_PARA_EL_DESARROLLO_DE_LAS_MUJERES"
     ): analizar_instancia_mujeres,
-    "INSTANCIA_MUJERES": analizar_instancia_mujeres,
+    "INSTANCIA  _MUJERES": analizar_instancia_mujeres,
     # --- ÁREA: 5.4 ATENCIÓN CIUDADANA ---
     "5.4 ATENCIÓN CIUDADANA": analizar_atencion_ciudadana,
     "5.4 ATENCION CIUDADANA": analizar_atencion_ciudadana,
@@ -331,12 +342,12 @@ MAPEO_ANALISIS = {
     "3.5 BIBLIOTECAS Y C.C.A.": analizar_bibliotecas,
     "3.5 BIBLIOTECAS y C.C.A.xlsx - Hoja1": analizar_bibliotecas,
     "3.5 BIBLIOTECAS y C.C.A.xlsx - Hoja1.csv": analizar_bibliotecas,
-    # --- ÁREA: 2.10 SECRETARÍA GENERAL ---
-    "2_10_SECRETARIA_GENERAL": analizar_secretaria_general,
+    # --- ÁREA: 1.5 SECRETARÍA GENERAL ---
+    "1_5_SECRETARIA_GENERAL": analizar_secretaria_general,
     "SECRETARIA_GENERAL": analizar_secretaria_general,
-    "2.10 SECRETARIA GENERAL": analizar_secretaria_general,
-    "2.10 SECRETARIA GENERAL.xlsx - Hoja1": analizar_secretaria_general,
-    "2.10 SECRETARIA GENERAL.xlsx - Hoja1.csv": analizar_secretaria_general,
+    "1.5 SECRETARIA GENERAL": analizar_secretaria_general,
+    "1.5 SECRETARIA GENERAL.xlsx - Hoja1": analizar_secretaria_general,
+    "1.5 SECRETARIA GENERAL.xlsx - Hoja1.csv": analizar_secretaria_general,
     # --- ÁREA: 2.6 DIF PSICOLOGÍA ---
     "2_6_DIF_PSICOLOGIA": analizar_dif_psicologia,
     "DIF_PSICOLOGIA": analizar_dif_psicologia,

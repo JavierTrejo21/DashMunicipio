@@ -12,8 +12,11 @@ def servir_layout():
         
                 # Almacenamiento de datos de sesión y componente de descarga
         dcc.Store(id="active-info"),
+        dcc.Store(id="eje-id-seleccionado"),
         dcc.Download(id="download-excel-mir-original"),
         dcc.Download(id="download-reporte-eje"),
+        dcc.Download(id="download-reporte-area"),
+
 
 
         # --- TOPBAR (Estilo Institucional) ---
@@ -104,9 +107,9 @@ def servir_layout():
                 dbc.Row([
                     # Columna Izquierda (Ejes 2, 3, 4)
                     dbc.Col([
-                        crear_tarjeta_eje_v4(2, "Bienestar y Prosperidad", "bi-rocket-takeoff", 62.16, 9),
-                        crear_tarjeta_eje_v4(3, "Desarrollo Económico y Cultural", "bi-building-up", 57.41, 7),
-                        crear_tarjeta_eje_v4(4, "Desarrollo Sostenible e Infraestructura", "bi-leaf", 52.20, 10),
+                        crear_tarjeta_eje_v4(2, "Bienestar y Prosperidad", "bi-rocket-takeoff", 69.55, 9),
+                        crear_tarjeta_eje_v4(3, "Desarrollo Económico y Cultural", "bi-building-up", 70.37, 7),
+                        crear_tarjeta_eje_v4(4, "Desarrollo Sostenible e Infraestructura", "bi-leaf", 60.80, 10),
                     ], md=4, className="d-flex flex-column gap-3"),
 
                     # Columna Central (Panel de Áreas Dinámico)
@@ -235,4 +238,4 @@ def modal_borrado():
             dbc.Button("Cancelar", id="btn-cerrar-borrado", color="secondary", className="me-2"),
             dbc.Button("Confirmar", id="btn-confirmar-borrado-final", color="danger")
         ]),
-    ], id="modal-borrado-admin")    
+    ], id="modal-borrado-admin")

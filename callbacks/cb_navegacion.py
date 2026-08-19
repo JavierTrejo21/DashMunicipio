@@ -1,3 +1,4 @@
+# cb_navegacion.py
 import io
 import json
 import math
@@ -29,6 +30,9 @@ from .servicio_mir import generar_resumen_indicadores_area
 # --- Enrutador estratégico para conectar cada área con su archivo en 'areas/' ---
 from analisis_estrategico import analizar_datos_estrategicos
 
+# --- Renderizadores PDF específicos por área (réplica del dashboard en pantalla) ---
+from areas_pdf import obtener_renderizador_pdf
+
 
 def register_navegacion_callbacks(app):
 
@@ -38,6 +42,7 @@ def register_navegacion_callbacks(app):
           Output("collapse-areas", "is_open"),
           Output("titulo-eje-seleccionado", "children"),
           Output("msg-placeholder-areas", "style"),
+          Output("eje-id-seleccionado", "data"),
       ],
       [Input({"type": "tarjeta-eje", "index": ALL}, "n_clicks")],
       prevent_initial_call=True,
@@ -45,17 +50,17 @@ def register_navegacion_callbacks(app):
   def desplegar_areas(n_clicks):
     ctx = dash.callback_context
     if not ctx.triggered or not any(x for x in n_clicks if x is not None):
-      return no_update, no_update, no_update, no_update
+      return no_update, no_update, no_update, no_update, no_update
 
     prop_id = ctx.triggered[0]["prop_id"]
     try:
       match_idx = re.search(r'"index":\s*(\d+)', prop_id)
       idx = int(match_idx.group(1)) if match_idx else None
     except Exception:
-      return no_update, no_update, no_update, no_update
+      return no_update, no_update, no_update, no_update, no_update
 
     if idx is None:
-      return no_update, no_update, no_update, no_update
+      return no_update, no_update, no_update, no_update, no_update
 
     conn = sqlite3.connect(DB_GESTION)
     eje_data = pd.read_sql_query(
@@ -79,6 +84,7 @@ def register_navegacion_callbacks(app):
           True,
           nombre_eje,
           {"display": "none"},
+          idx,
       )
 
     botones = []
@@ -102,7 +108,7 @@ def register_navegacion_callbacks(app):
           )
       )
 
-    return botones, True, nombre_eje, {"display": "none"}
+    return botones, True, nombre_eje, {"display": "none"}, idx
 
   @app.callback(
       [
@@ -160,7 +166,6 @@ def register_navegacion_callbacks(app):
     nombre_eje = area_info.iloc[0]["eje_nom"]
     tabla = normalizar_nombre_tabla(nombre_completo)
 
-    # Separar clave y nombre
     match_clave = re.match(r"^([\d\.]+)\s*(.*)", nombre_completo)
     clave_area = match_clave.group(1) if match_clave else ""
     nombre_area = match_clave.group(2) if match_clave else nombre_completo
@@ -169,7 +174,6 @@ def register_navegacion_callbacks(app):
         "SELECT name FROM sqlite_master WHERE type='table';", conn
     )["name"].tolist()
 
-    # Determinar icono segun area
     icono_area = "ti ti-briefcase"
     if "psicologia" in nombre_completo.lower():
       icono_area = "ti ti-brain"
@@ -209,7 +213,6 @@ def register_navegacion_callbacks(app):
 
       conn.close()
 
-      # --- SERVICIO MIR ORIGINAL ---
       try:
         resumen_mir = generar_resumen_indicadores_area(nombre_completo, df)
       except TypeError:
@@ -220,7 +223,6 @@ def register_navegacion_callbacks(app):
       except Exception:
         resumen_mir = html.Div()
 
-      # --- VINCULACIÓN CON EL ENRUTADOR DE ANÁLISIS POR ÁREA ---
       analisis_especifico = analizar_datos_estrategicos(tabla, df)
       if analisis_especifico is None or isinstance(
           analisis_especifico, dbc.Alert
@@ -233,12 +235,10 @@ def register_navegacion_callbacks(app):
       ):
         analisis_especifico = html.Div()
 
-      # Encabezado V4
       encabezado_v4 = generar_bloque_encabezado_area(
           nombre_eje, clave_area, nombre_area, icono_area
       )
 
-      # --- ESTRUCTURA DE LA TABLA DE INDICADORES DETALLADOS CON ESTILOS OPTIMIZADOS ---
       total_registros = len(df)
 
       total_invertido_str = "$ 0.00"
@@ -256,7 +256,6 @@ def register_navegacion_callbacks(app):
             pass
 
       componente_tabla_detallada = html.Div([
-          # Inyección de estilos CSS optimizados para ajustar títulos largos, saltos de línea y celdas compactas
           html.Div(
               children=dcc.Markdown(
                   """
@@ -304,7 +303,6 @@ def register_navegacion_callbacks(app):
                           "zIndex": "2",
                       }
                   ),
-                  # Cabecera interactiva para colapsar/expandir
                   html.Div(
                       id="btn-toggle-tabla-indicadores",
                       className="table-title-row",
@@ -352,7 +350,6 @@ def register_navegacion_callbacks(app):
                           ),
                       ],
                   ),
-                  # Acordeón con la clase compacta y ajuste de cabeceras integradas
                   dbc.Collapse(
                       html.Div(
                           className="compact-table-wrapper",
@@ -424,125 +421,271 @@ def register_navegacion_callbacks(app):
           no_update,
       )
 
+  def _texto_seguro(valor):
+    """Convierte cualquier valor a texto y lo hace seguro para el motor
+    de fuentes de FPDF (Latin-1), sustituyendo caracteres no soportados
+    en lugar de reventar la generación del PDF."""
+    try:
+      texto = "" if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
+    except Exception:
+      texto = str(valor)
+    return texto.encode("latin-1", "replace").decode("latin-1")
+
+  def _agregar_encabezado_pdf(pdf, nombre_eje):
+    pdf.add_page()
+    pdf.set_fill_color(122, 30, 61)
+    pdf.rect(0, 0, 210, 30, "F")
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 13)
+    pdf.set_xy(10, 8)
+    pdf.cell(0, 8, "REPORTE ESTRATÉGICO DE GESTIÓN", ln=True, align="C")
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 8, f"EJE: {_texto_seguro(nombre_eje).upper()}", ln=True, align="C")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(36)
+
   @app.callback(
       Output("download-reporte-eje", "data"),
       Input("btn-generar-pdf-eje", "n_clicks"),
-      State("titulo-eje-seleccionado", "children"),
+      [
+          State("titulo-eje-seleccionado", "children"),
+          State("eje-id-seleccionado", "data"),
+      ],
       prevent_initial_call=True,
   )
-  def generar_pdf_eje(n_clicks, nombre_eje):
+  def generar_pdf_eje(n_clicks, nombre_eje, eje_id_guardado):
     if not n_clicks or not nombre_eje:
       return no_update
 
-    # Crear PDF
     pdf = FPDF()
-    pdf.add_page()
-
-    # Título Principal
-    pdf.set_fill_color(122, 30, 61)  # Guinda institucional
-    pdf.rect(0, 0, 210, 40, "F")
-
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "REPORTE ESTRATÉGICO DE GESTIÓN", ln=True, align="C")
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"EJE: {str(nombre_eje).upper()}", ln=True, align="C")
-    pdf.ln(20)
-
-    pdf.set_text_color(0, 0, 0)
+    pdf.set_auto_page_break(auto=True, margin=18)
+    _agregar_encabezado_pdf(pdf, nombre_eje)
 
     conn = sqlite3.connect(DB_GESTION)
 
-    # Obtener áreas del eje
     try:
-      # Primero buscamos el ID del eje por su nombre
-      eje_query = "SELECT id FROM acuerdos WHERE nombre = ?"
-      df_eje = pd.read_sql_query(eje_query, conn, params=(nombre_eje,))
+      limpio_eje = str(nombre_eje).strip()
+      eje_id = None
+      nombre_eje_real = limpio_eje
 
-      if df_eje.empty:
-        # Intento de búsqueda parcial si falla
+      # --- 1. El id real del eje viene directo de la tarjeta que el
+      # usuario clickeó (guardado en el Store "eje-id-seleccionado"),
+      # que es EXACTAMENTE el mismo id que usa el panel en pantalla para
+      # listar las áreas. Ya no se re-adivina buscando por nombre, porque
+      # esa búsqueda por texto podía resolver a un id distinto al real
+      # y por eso el PDF no encontraba áreas que sí se veían en pantalla.
+      if eje_id_guardado is not None:
+        eje_id = eje_id_guardado
+        df_eje_nombre = pd.read_sql_query(
+            "SELECT nombre FROM acuerdos WHERE id = ?", conn, params=(eje_id,)
+        )
+        if not df_eje_nombre.empty:
+          nombre_eje_real = df_eje_nombre.iloc[0]["nombre"]
+
+      # Respaldo por si el Store no llegó a poblarse (ej. sesión antigua):
+      # se mantiene la búsqueda por nombre como red de seguridad.
+      if eje_id is None:
+        eje_query = (
+            "SELECT id, nombre FROM acuerdos WHERE TRIM(nombre) = ? OR"
+            " nombre LIKE ?"
+        )
         df_eje = pd.read_sql_query(
-            "SELECT id FROM acuerdos WHERE ? LIKE '%' || nombre || '%'",
-            conn,
-            params=(nombre_eje,),
+            eje_query, conn, params=(limpio_eje, f"%{limpio_eje}%")
         )
+        if df_eje.empty:
+          palabras_clave = limpio_eje.split()[0]
+          df_eje = pd.read_sql_query(
+              "SELECT id, nombre FROM acuerdos WHERE nombre LIKE ?",
+              conn,
+              params=(f"%{palabras_clave}%",),
+          )
+        if not df_eje.empty:
+          eje_id = df_eje.iloc[0]["id"]
+          nombre_eje_real = df_eje.iloc[0]["nombre"]
 
-      if not df_eje.empty:
-        eje_id = df_eje.iloc[0]["id"]
+      pdf.set_font("Arial", "B", 10)
+      pdf.set_text_color(122, 30, 61)
+      pdf.cell(0, 6, f"Eje validado en sistema: {_texto_seguro(nombre_eje_real)}", ln=True)
+      pdf.set_text_color(0, 0, 0)
+      pdf.ln(2)
+
+      # --- 2. Traer TODAS las áreas vinculadas a ese acuerdo ---
+      # Se compara castenado ambos lados a TEXTO: el id de "acuerdos" es
+      # numérico, pero "areas.acuerdo_id" puede haberse guardado como texto
+      # desde el <select> del modal (ej. "1" en vez de 1); comparar
+      # directamente "=" perdía áreas por ese desfase de tipo.
+      df_areas = pd.DataFrame()
+      if eje_id is not None:
         df_areas = pd.read_sql_query(
-            "SELECT * FROM areas WHERE acuerdo_id = ?", conn, params=(eje_id,)
+            "SELECT * FROM areas WHERE TRIM(CAST(acuerdo_id AS TEXT)) ="
+            " TRIM(CAST(? AS TEXT))",
+            conn,
+            params=(eje_id,),
         )
 
-        if df_areas.empty:
-          pdf.set_font("Arial", "I", 11)
-          pdf.cell(0, 10, "No se encontraron áreas vinculadas a este eje.", ln=True)
-        else:
-          for _, area in df_areas.iterrows():
-            pdf.set_font("Arial", "B", 12)
-            pdf.set_draw_color(181, 137, 44)  # Dorado
-            pdf.set_line_width(0.5)
-            pdf.cell(0, 10, f"AREA: {area['nombre']}", border="B", ln=True)
-            pdf.ln(2)
+      # Respaldo: si por algún motivo no hubo match por id, buscar por
+      # texto del nombre del eje directamente en la tabla de áreas.
+      if df_areas.empty:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(areas)")
+        columnas_areas = [col[1] for col in cursor.fetchall()]
+        for col_texto in ["nombre_eje", "eje", "acuerdo", "eje_nombre", "nombre_acuerdo"]:
+          if col_texto in columnas_areas:
+            df_areas = pd.read_sql_query(
+                f'SELECT * FROM areas WHERE "{col_texto}" LIKE ?',
+                conn,
+                params=(f"%{nombre_eje_real}%",),
+            )
+            if not df_areas.empty:
+              break
 
-            tabla_nom = normalizar_nombre_tabla(area["nombre"])
-            try:
-              df_datos = pd.read_sql_query(
-                  f'SELECT * FROM "{tabla_nom}"', conn
-              )
-              pdf.set_font("Arial", "", 10)
-              pdf.cell(0, 7, f"Total de registros: {len(df_datos)}", ln=True)
+      if "nombre" in df_areas.columns:
+        df_areas = df_areas.sort_values("nombre")
 
-              # Intentar sumar inversión si existe
+      if df_areas.empty:
+        pdf.set_font("Arial", "I", 10)
+        pdf.cell(
+            0,
+            10,
+            "No se encontraron áreas vinculadas a este eje en la base de"
+            " datos.",
+            ln=True,
+        )
+      else:
+        pdf.set_font("Arial", "I", 9)
+        pdf.cell(
+            0, 6, f"Áreas institucionales detectadas: {len(df_areas)}", ln=True
+        )
+        pdf.ln(3)
+
+        ancho_pagina = pdf.w - pdf.l_margin - pdf.r_margin
+
+        # --- 3. Por cada área, imprimir el detalle COMPLETO (todas las
+        # filas y todas las columnas de su tabla, sin recortes) ---
+        for _, area in df_areas.iterrows():
+          nombre_area_txt = area["nombre"] if "nombre" in area else "Área Operativa"
+
+          if pdf.get_y() > 250:
+            pdf.add_page()
+
+          pdf.set_font("Arial", "B", 10)
+          pdf.set_fill_color(240, 235, 230)
+          pdf.set_draw_color(181, 137, 44)
+          pdf.set_line_width(0.3)
+          pdf.cell(
+              0,
+              7,
+              f" ÁREA: {_texto_seguro(nombre_area_txt).upper()}",
+              border=1,
+              ln=True,
+              fill=True,
+          )
+          pdf.ln(2)
+
+          tabla_nom = normalizar_nombre_tabla(nombre_area_txt)
+          try:
+            df_datos = pd.read_sql_query(f'SELECT * FROM "{tabla_nom}"', conn)
+            columnas_datos = [c for c in df_datos.columns if str(c).lower() not in ["rowid", "id"]]
+
+            renderizador_especifico = obtener_renderizador_pdf(nombre_area_txt)
+
+            if renderizador_especifico is not None:
+              # --- Réplica exacta del dashboard en pantalla para esta
+              # área (tarjetas KPI, barras de progreso, gráfica mensual
+              # y tabla), usando el mismo cálculo que su módulo en
+              # areas/<area>.py ---
+              try:
+                renderizador_especifico(pdf, df_datos, ancho_pagina)
+              except Exception as e_render:
+                pdf.set_font("Arial", "I", 8)
+                pdf.set_text_color(180, 60, 60)
+                pdf.multi_cell(
+                    ancho_pagina, 5,
+                    _texto_seguro(f"  (Error al generar el panel específico de esta área: {e_render}. Se muestra el detalle genérico.)"),
+                )
+                pdf.set_text_color(0, 0, 0)
+                renderizador_especifico = None  # fuerza el fallback abajo
+
+            if renderizador_especifico is None:
+              pdf.set_font("Arial", "", 8)
+              pdf.cell(0, 5, f"Total de registros: {len(df_datos)}", ln=True)
+
               inversion_total = 0
-              for col in df_datos.columns:
-                if any(
-                    term in col.lower() for term in ["inversion", "monto", "costo"]
-                ):
-                  inversion_total += pd.to_numeric(
-                      df_datos[col], errors="coerce"
-                  ).sum()
+              for col in columnas_datos:
+                if any(term in str(col).lower() for term in ["inversion", "monto", "costo", "total", "recaudac"]):
+                  try:
+                    inversion_total += pd.to_numeric(df_datos[col], errors="coerce").sum()
+                  except Exception:
+                    pass
 
               if inversion_total > 0:
-                pdf.cell(
-                    0,
-                    7,
-                    f"Inversión total detectada: $ {inversion_total:,.2f}",
-                    ln=True,
-                )
+                pdf.cell(0, 5, f"Inversión / Monto global registrado: $ {inversion_total:,.2f}", ln=True)
 
-              pdf.ln(5)
-            except Exception:
-              pdf.set_font("Arial", "I", 9)
-              pdf.set_text_color(150, 150, 150)
-              pdf.cell(
-                  0, 7, "Sin tabla de datos cargada actualmente.", ln=True
-              )
-              pdf.set_text_color(0, 0, 0)
-              pdf.ln(5)
-      else:
-        pdf.cell(
-            0, 10, "No se pudo identificar el eje en la base de datos.", ln=True
-        )
+              pdf.ln(1)
+
+              if df_datos.empty or not columnas_datos:
+                pdf.set_font("Arial", "I", 8)
+                pdf.set_text_color(120, 120, 120)
+                pdf.cell(0, 5, "  (No hay registros cargados en esta área)", ln=True)
+                pdf.set_text_color(0, 0, 0)
+              else:
+                # Detalle completo: cada registro con TODAS sus columnas,
+                # en formato "columna: valor" con salto de línea automático.
+                for num_fila, (_, fila) in enumerate(df_datos.iterrows(), start=1):
+                  if pdf.get_y() > 265:
+                    pdf.add_page()
+
+                  pdf.set_font("Arial", "B", 8)
+                  pdf.set_text_color(122, 30, 61)
+                  pdf.cell(0, 5, f"Registro {num_fila}", ln=True)
+                  pdf.set_text_color(0, 0, 0)
+                  pdf.set_font("Arial", "", 8)
+
+                  for col in columnas_datos:
+                    val = fila[col]
+                    if pd.isna(val) or str(val).strip() == "":
+                      continue
+                    if pdf.get_y() > 270:
+                      pdf.add_page()
+                    texto_linea = _texto_seguro(f"  • {col}: {val}")
+                    pdf.multi_cell(ancho_pagina, 4.5, texto_linea)
+
+                  pdf.ln(1.5)
+
+            pdf.ln(3)
+          except Exception as e_area:
+            pdf.set_font("Arial", "I", 8)
+            pdf.set_text_color(150, 150, 150)
+            pdf.multi_cell(
+                ancho_pagina,
+                5,
+                _texto_seguro(f"  (Sin tabla de datos cargada para esta área: {e_area})"),
+            )
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(3)
 
     except Exception as e:
-      pdf.cell(0, 10, f"Error al procesar datos: {str(e)}", ln=True)
+      pdf.set_font("Arial", "", 9)
+      pdf.multi_cell(0, 8, _texto_seguro(f"Error al procesar datos del eje: {e}"))
     finally:
       conn.close()
 
-    # Pie de página simple
-    pdf.set_y(-20)
+    pdf.set_y(-15)
     pdf.set_font("Arial", "I", 8)
     pdf.cell(
         0,
         10,
-        "Sistema de Gestión Municipal - Reporte generado automáticamente",
+        "Sistema de Gestión Municipal - Reporte Estratégico Consolidado",
         align="C",
     )
 
-    # Retornar como bytes
-    return dcc.send_bytes(
-        pdf.output(dest="S"), f"Reporte_{str(nombre_eje).replace(' ', '_')}.pdf"
+    pdf_output = pdf.output(dest="S")
+    pdf_bytes = (
+        bytes(pdf_output) if not isinstance(pdf_output, bytes) else pdf_output
     )
+
+    nombre_archivo_seguro = re.sub(r"[^A-Za-z0-9_]+", "_", str(nombre_eje)).strip("_")
+    return dcc.send_bytes(pdf_bytes, f"Reporte_Eje_{nombre_archivo_seguro}.pdf")
 
   @app.callback(
       Output("collapse-tabla-indicadores", "is_open"),
